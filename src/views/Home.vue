@@ -509,7 +509,7 @@ export default {
       {
         title: 'Software Engineering Degree',
         date: '2016 - 2020',
-        description: 'Graduated with honors in Computer Science from University of Nairobi, specializing in AI and web technologies.'
+        description: 'Graduater In Software engineering  from KCA and Strathmore University, specializing in AI and web technologies.'
       },
       {
         title: 'Junior Developer at TechStart',
