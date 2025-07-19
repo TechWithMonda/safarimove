@@ -1,14 +1,24 @@
-<script setup>
-import { RouterView } from 'vue-router'
-</script>
-
+<!-- App.vue -->
 <template>
-  <RouterView />
+ 
+    <!-- <Navbar /> -->
+
+      <!-- <Sidebar /> -->
+      <main >
+        <router-view />
+      </main>
+   
+ 
 </template>
 
-<style>
-/* Global styles */
+<script>
+import Navbar from './components/Navbar.vue'
+import Sidebar from './components/Sidebar.vue'
 
-
-
-</style>
+export default {
+  components: {
+    Navbar,
+    Sidebar
+  }
+}
+</script>
