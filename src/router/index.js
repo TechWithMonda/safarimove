@@ -1,34 +1,48 @@
-// src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/Home.vue'
+import Dashboard from '../views/Dashboard.vue'
+import Traffic from '../views/Traffic.vue'
+import PopularRoutes from '../views/PopularRoutes.vue'
+import BodaDirectory from '../views/BodaDirectory.vue'
+import RoutePlanner from '../views/RoutePlanner.vue'
+import Notifications from '../views/Notifications.vue'
+import HelpSupport from '../views/HelpSupport.vue'
 
-// Define routes
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HomeView
+    name: 'Dashboard',
+    component: Dashboard
   },
-    {
-    path: '/trafficupdates',
-    name: 'trafficupdates',
-    component: () => import('../views/TrafficUpdates.vue')
+  {
+    path: '/traffic',
+    name: 'Traffic',
+    component: Traffic
   },
-     {
-    path: '/MatatuRoutes',
-    name: 'MatatuRoutes',
-    component: () => import('../views/MatatuRoutes.vue')
+  {
+    path: '/popular-routes',
+    name: 'PopularRoutes',
+    component: PopularRoutes
   },
-       {
-    path: '/BodaBodaRiders',
-    name: 'BodaBodaRiders',
-    component: () => import('../views/BodaBodaRiders.vue')
+  {
+    path: '/boda',
+    name: 'BodaDirectory',
+    component: BodaDirectory
   },
-        {
-    path: '/FindAMatatu',
-    name: 'FindAMatatu',
-    component: () => import('../views/FindAMatatu.vue')
+  {
+    path: '/planner',
+    name: 'RoutePlanner',
+    component: RoutePlanner
   },
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: Notifications
+  },
+  {
+    path: '/support',
+    name: 'HelpSupport',
+    component: HelpSupport
+  }
 ]
 
 // Create and export router
