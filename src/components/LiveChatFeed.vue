@@ -1,26 +1,69 @@
 <template>
-  <div class="live-chat-section">
-    <h2>Live Traffic Chat</h2>
-    <div class="chat-container">
-      <div class="messages" ref="messagesContainer">
-        <div v-for="(message, index) in messages" :key="index" class="message">
-          <div class="message-header">
-            <span class="username">{{ message.username }}</span>
-            <span class="timestamp">{{ formatTime(message.timestamp) }}</span>
+  <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
+    <div class="px-6 py-4 border-b border-slate-700">
+      <h2 class="text-lg font-semibold text-white flex items-center">
+        <i class="fas fa-comments mr-2 text-blue-400"></i>
+        Live Chat Feed
+      </h2>
+    </div>
+    
+    <div class="p-6 max-h-96 overflow-y-auto custom-scrollbar">
+      <div 
+        v-for="(msg, index) in chatMessages" 
+        :key="index"
+        class="flex items-start space-x-3 mb-4"
+      >
+        <div 
+          :class="[
+            getAvatarColor(msg.name),
+            msg.isCurrentUser ? 'ring-2 ring-blue-400' : ''
+          ]" 
+          class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+        >
+          <span class="text-white font-medium text-xs">{{ msg.avatar }}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center space-x-2 mb-1">
+            <span class="font-medium text-white text-sm">{{ msg.username }}</span>
+            <span class="text-gray-400 text-xs">{{ msg.time }}</span>
+            <span v-if="msg.is_disappearing" class="text-xs text-yellow-400">
+              <i class="fas fa-hourglass-half"></i> 24h
+            </span>
           </div>
-          <div class="message-content">{{ message.text }}</div>
-          <div class="message-location" v-if="message.location">
-            <i class="fas fa-map-marker-alt"></i> {{ message.location }}
-          </div>
+          <p 
+            class="text-gray-300 text-sm rounded-lg p-3"
+            :class="msg.isCurrentUser ? 'bg-blue-600/20' : 'bg-slate-700'"
+          >
+            {{ msg.message }}
+          </p>
         </div>
       </div>
-      <div class="message-input">
+    </div>
+
+    <div class="px-6 py-4 border-t border-slate-700">
+      <div class="flex items-center mb-2">
         <input 
-          v-model="newMessage" 
-          @keyup.enter="sendMessage" 
-          placeholder="Share traffic update..."
+          type="checkbox" 
+          id="disappearing" 
+          v-model="isDisappearing"
+          class="mr-2 rounded text-blue-600 focus:ring-blue-500"
         >
-        <button @click="sendMessage">
+        <label for="disappearing" class="text-sm text-gray-300">
+          Disappearing message (24h)
+        </label>
+      </div>
+      <div class="flex space-x-3">
+        <input 
+          v-model="newMessage"
+          @keyup.enter="sendMessage"
+          type="text" 
+          placeholder="Share traffic updates..."
+          class="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+        <button 
+          @click="sendMessage"
+          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+        >
           <i class="fas fa-paper-plane"></i>
         </button>
       </div>
@@ -29,215 +72,210 @@
 </template>
 
 <script>
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, push, onValue, limitToLast } from 'firebase/database';
-
-// Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDkBXguVVnDXRq0Xibua9BkHjIo-up7Ieo",
-  authDomain: "safarimove-548a9.firebaseapp.com",
-  databaseURL: "https://safarimove-548a9-default-rtdb.firebaseio.com",
-  projectId: "safarimove-548a9",
-  storageBucket: "safarimove-548a9.appspot.com",
-  messagingSenderId: "300234077804",
-  appId: "1:300234077804:web:6baf0b1e80877a45084a49",
-  measurementId: "G-331MP2HERF"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+import api from '@/api';
 
 export default {
-  name: 'LiveChatFeed',
+  name: 'ChatComponent',
   data() {
     return {
-      messages: [],
+      chatMessages: [],
       newMessage: '',
-      username: 'Anonymous'
+      currentUser: null,
+      socket: null,
+      isDisappearing: false,
+      messageCheckInterval: null,
+      reconnectAttempts: 0,
+      maxReconnectAttempts: 5
     }
   },
   mounted() {
-    this.setupUsername();
-    this.listenForMessages();
+    this.loadCurrentUser();
+    this.fetchMessages();
+    this.connectWebSocket();
+    this.setupMessageChecker();
+  },
+  beforeUnmount() {
+    if (this.socket) {
+      this.socket.close();
+    }
+    if (this.messageCheckInterval) {
+      clearInterval(this.messageCheckInterval);
+    }
   },
   methods: {
-    setupUsername() {
-      const savedUsername = localStorage.getItem('chatUsername');
-      if (savedUsername) {
-        this.username = savedUsername;
-      } else {
-        this.username = `User${Math.floor(Math.random() * 10000)}`;
-        localStorage.setItem('chatUsername', this.username);
-      }
+    setupMessageChecker() {
+      this.messageCheckInterval = setInterval(() => {
+        this.checkExpiredMessages();
+      }, 60000); // Check every minute
     },
     
-    listenForMessages() {
-      const messagesRef = ref(db, 'traffic_chat');
-      const recentMessagesRef = limitToLast(messagesRef, 50);
-      
-      onValue(recentMessagesRef, (snapshot) => {
-        const messages = [];
-        snapshot.forEach((childSnapshot) => {
-          messages.push({
-            id: childSnapshot.key,
-            ...childSnapshot.val()
-          });
-        });
-        this.messages = messages;
-        this.scrollToBottom();
+    checkExpiredMessages() {
+      this.chatMessages = this.chatMessages.filter(msg => {
+        if (msg.is_disappearing) {
+          const sentAt = new Date(msg.sent_at);
+          const expiryTime = new Date(sentAt.getTime() + 24 * 60 * 60 * 1000);
+          return new Date() < expiryTime;
+        }
+        return true;
       });
     },
     
-    sendMessage() {
-      if (this.newMessage.trim() === '') return;
-      
-      // Get current location if available
-      let location = '';
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          location = `Near ${this.getNearestLandmark(pos.coords.latitude, pos.coords.longitude)}`;
-          this.pushMessage(location);
-        }, () => {
-          this.pushMessage();
-        });
-      } else {
-        this.pushMessage();
+    loadCurrentUser() {
+      const userData = JSON.parse(localStorage.getItem('user'));
+      this.currentUser = userData?.username || 'Anonymous';
+    },
+    
+    async fetchMessages() {
+      try {
+        const res = await api.get('/messages/');
+        this.chatMessages = res.data
+          .filter(msg => !msg.is_expired)
+          .map(msg => this.formatMessage(msg));
+      } catch (err) {
+        console.error('Failed to load messages:', err);
       }
     },
     
-    pushMessage(location = '') {
-      const message = {
-        username: this.username,
-        text: this.newMessage,
-        timestamp: Date.now(),
-        location: location
+    formatMessage(msg) {
+      const isCurrentUser = msg.sender === this.currentUser;
+      return {
+        id: msg.id,
+        name: msg.sender,
+        username: isCurrentUser ? 'You' : msg.sender,
+        message: msg.content,
+        time: new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        avatar: msg.sender.charAt(0).toUpperCase(),
+        isCurrentUser,
+        is_disappearing: msg.is_disappearing,
+        sent_at: msg.sent_at
       };
+    },
+    
+    connectWebSocket() {
+      const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+      const wsUrl = wsScheme + window.location.host + '/ws/chat/';
       
-      push(ref(db, 'traffic_chat'), message);
-      this.newMessage = '';
+      this.socket = new WebSocket(wsUrl);
+
+      this.socket.onopen = () => {
+        console.log('WebSocket connected');
+        this.reconnectAttempts = 0;
+      };
+
+      this.socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const formattedMsg = this.formatMessage(data);
+          
+          const existingIndex = this.chatMessages.findIndex(m => m.id === data.id);
+          if (existingIndex >= 0) {
+            this.chatMessages.splice(existingIndex, 1, formattedMsg);
+          } else {
+            this.chatMessages.push(formattedMsg);
+          }
+
+          this.$nextTick(() => {
+            const container = this.$el.querySelector('.custom-scrollbar');
+            if (container) {
+              container.scrollTop = container.scrollHeight;
+            }
+          });
+        } catch (err) {
+          console.error('Error parsing WebSocket message:', err);
+        }
+      };
+
+      this.socket.onclose = (e) => {
+        console.log('WebSocket disconnected:', e.reason);
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          const delay = Math.min(1000 * (this.reconnectAttempts + 1), 5000);
+          setTimeout(() => {
+            this.reconnectAttempts++;
+            this.connectWebSocket();
+          }, delay);
+        }
+      };
+
+      this.socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
     },
     
-    formatTime(timestamp) {
-      return new Date(timestamp).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      });
+    async sendMessage() {
+      if (!this.newMessage.trim()) return;
+
+      const messageContent = this.newMessage;
+      const isDisappearing = this.isDisappearing;
+      this.newMessage = ''; // Clear input immediately
+
+      try {
+        // Optimistically add to UI
+        const tempId = Date.now();
+        this.chatMessages.push({
+          id: tempId,
+          name: this.currentUser,
+          username: 'You',
+          message: messageContent,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          avatar: this.currentUser.charAt(0).toUpperCase(),
+          isCurrentUser: true,
+          is_disappearing: isDisappearing,
+          sent_at: new Date().toISOString()
+        });
+
+        // Save to database via API
+        const apiResponse = await api.post('/messages/', {
+          sender: this.currentUser,
+          content: messageContent,
+          is_disappearing: isDisappearing
+        });
+
+        // Replace temporary message with persisted message
+        const persistedMessage = apiResponse.data;
+        const tempMsgIndex = this.chatMessages.findIndex(m => m.id === tempId);
+        if (tempMsgIndex >= 0) {
+          this.chatMessages.splice(tempMsgIndex, 1, this.formatMessage(persistedMessage));
+        }
+
+        // Also send via WebSocket if connected
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+          this.socket.send(JSON.stringify({
+            sender: this.currentUser,
+            message: messageContent,
+            id: persistedMessage.id,
+            sent_at: persistedMessage.sent_at,
+            is_disappearing: isDisappearing
+          }));
+        }
+
+      } catch (err) {
+        console.error('Failed to send message:', err);
+        // Remove optimistic message if failed
+        this.chatMessages = this.chatMessages.filter(m => 
+          !(m.message === messageContent && m.name === this.currentUser && !m.id)
+        );
+        this.newMessage = messageContent; // Restore message if failed
+      }
     },
     
-    getNearestLandmark(lat, lng) {
-      // This would call a geocoding service to find nearest landmark
-      // For now, just return coordinates
-      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-    },
-    
-    scrollToBottom() {
-      this.$nextTick(() => {
-        const container = this.$refs.messagesContainer;
-        container.scrollTop = container.scrollHeight;
-      });
+    getAvatarColor(name) {
+      const colors = [
+        'bg-blue-500', 'bg-green-500', 'bg-purple-500', 
+        'bg-red-500', 'bg-yellow-500', 'bg-indigo-500'
+      ];
+      const index = name.charCodeAt(0) % colors.length;
+      return colors[index];
     }
   }
 }
 </script>
 
 <style scoped>
-.live-chat-section {
-  margin-top: 2rem;
-  background: white;
-  border-radius: 10px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
 }
-
-.live-chat-section h2 {
-  color: #1a5276;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #eaf2f8;
-}
-
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  height: 400px;
-}
-
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1rem;
-  background: #f9f9f9;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-}
-
-.message {
-  margin-bottom: 1rem;
-  padding: 0.8rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.message-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-}
-
-.username {
-  font-weight: bold;
-  color: #1a5276;
-}
-
-.timestamp {
-  color: #7f8c8d;
-}
-
-.message-content {
-  margin-bottom: 0.5rem;
-}
-
-.message-location {
-  font-size: 0.8rem;
-  color: #3498db;
-}
-
-.message-location i {
-  margin-right: 0.3rem;
-}
-
-.message-input {
-  display: flex;
-}
-
-.message-input input {
-  flex: 1;
-  padding: 0.8rem;
-  border: 1px solid #ddd;
-  border-radius: 5px 0 0 5px;
-  font-size: 1rem;
-}
-
-.message-input button {
-  background: #1a5276;
-  color: white;
-  border: none;
-  padding: 0 1.5rem;
-  border-radius: 0 5px 5px 0;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.message-input button:hover {
-  background: #154360;
-}
-
-@media (max-width: 768px) {
-  .chat-container {
-    height: 300px;
-  }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 3px;
 }
 </style>

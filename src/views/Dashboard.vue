@@ -22,7 +22,7 @@
     <!-- Main Content Grid -->
     <div class="grid lg:grid-cols-2 gap-6">
       <!-- Live Chat Feed -->
-      <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
+      <!-- <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
         <div class="px-6 py-4 border-b border-slate-700">
           <h2 class="text-lg font-semibold text-white flex items-center">
             <i class="fas fa-comments mr-2 text-blue-400"></i>
@@ -77,7 +77,9 @@
             </button>
           </div>
         </div>
-      </div>
+      </div> -->
+   <LiveChatFeed  />
+
 
       <!-- Recent Updates -->
       <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
@@ -132,8 +134,14 @@
 <script>
 import api from '@/api';
 
+import LiveChatFeed  from '../components/LiveChatFeed.vue';
+
 export default {
   name: 'Dashboard',
+       components: {
+    LiveChatFeed
+  },
+    
   props: ['searchQuery'],
   data() {
     return {
@@ -163,7 +171,7 @@ export default {
           iconBg: 'bg-purple-500' 
         }
       ],
-      chatMessages: [],
+     chatMessages: [],
       recentUpdates: [
         {
           road: 'Thika Road',
