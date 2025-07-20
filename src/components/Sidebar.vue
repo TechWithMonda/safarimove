@@ -1,74 +1,365 @@
-<!-- components/Sidebar.vue -->
 <template>
-  <div class="w-64 bg-white shadow-md h-screen fixed">
-    <div class="p-4">
-      <nav class="mt-10">
-        <router-link 
-          to="/" 
-          class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded"
-          active-class="bg-blue-50 text-blue-600"
-        >
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          Dashboard
-        </router-link>
-        
-        <router-link 
-          to="/production" 
-          class="flex items-center px-4 py-2 mt-2 text-gray-700 hover:bg-gray-100 rounded"
-          active-class="bg-blue-50 text-blue-600"
-        >
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-          </svg>
-          Production
-        </router-link>
-        
-        <router-link 
-          to="/customers" 
-          class="flex items-center px-4 py-2 mt-2 text-gray-700 hover:bg-gray-100 rounded"
-          active-class="bg-blue-50 text-blue-600"
-        >
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-          </svg>
-          Customers
-        </router-link>
-        
-        <router-link 
-          to="/flock" 
-          class="flex items-center px-4 py-2 mt-2 text-gray-700 hover:bg-gray-100 rounded"
-          active-class="bg-blue-50 text-blue-600"
-        >
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          Flock Management
-        </router-link>
-        
-        <router-link 
-          to="/analytics" 
-          class="flex items-center px-4 py-2 mt-2 text-gray-700 hover:bg-gray-100 rounded"
-          active-class="bg-blue-50 text-blue-600"
-        >
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-          </svg>
-          Analytics
-        </router-link>
-        
-        <router-link 
-          to="/inventory" 
-          class="flex items-center px-4 py-2 mt-2 text-gray-700 hover:bg-gray-100 rounded"
-          active-class="bg-blue-50 text-blue-600"
-        >
-          <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
-          Inventory
-        </router-link>
-      </nav>
+  <div class="sidebar" :class="{ 'sidebar-collapsed': isCollapsed }">
+    <!-- Toggle Button -->
+    <button class="toggle-btn" @click="toggleSidebar">
+      <i :class="isCollapsed ? 'fas fa-chevron-right' : 'fas fa-chevron-left'"></i>
+    </button>
+
+    <!-- App Title -->
+    <div class="app-title">
+      <h1 v-if="!isCollapsed">Nairobi Connect</h1>
+      <h1 v-else>NC</h1>
+    </div>
+
+    <!-- Navigation Menu -->
+    <nav class="nav-menu">
+      <router-link 
+        to="/dashboard" 
+        class="nav-item"
+        :class="{ active: $route.path === '/dashboard' }"
+      >
+        <i class="fas fa-tachometer-alt"></i>
+        <span v-if="!isCollapsed">Dashboard</span>
+      </router-link>
+      
+      <!-- Other menu items with same pattern -->
+      <router-link 
+        to="/notifications" 
+        class="nav-item"
+        :class="{ active: $route.path === '/notifications' }"
+      >
+        <i class="fas fa-bell"></i>
+        <span v-if="!isCollapsed">Notifications</span>
+      </router-link>
+      
+      <router-link 
+        to="/settings" 
+        class="nav-item"
+        :class="{ active: $route.path === '/settings' }"
+      >
+        <i class="fas fa-cog"></i>
+        <span v-if="!isCollapsed">Settings</span>
+      </router-link>
+      
+      <router-link 
+        to="/help" 
+        class="nav-item"
+        :class="{ active: $route.path === '/help' }"
+      >
+        <i class="fas fa-question-circle"></i>
+        <span v-if="!isCollapsed">Help & Support</span>
+      </router-link>
+    </nav>
+
+    <!-- User Section -->
+    <div class="user-section">
+      <div class="user-profile">
+        <div class="user-info" v-if="!isCollapsed">
+          <div class="user-name">{{ user.name || 'User' }}</div>
+          <div class="user-role">Profile</div>
+        </div>
+      </div>
+      <button class="logout-btn" @click="logout">
+        <i class="fas fa-sign-out-alt"></i>
+        <span v-if="!isCollapsed">Logout</span>
+      </button>
     </div>
   </div>
 </template>
+
+<script>
+export default {
+  name: 'Sidebar',
+  data() {
+    return {
+      user: {
+        name: '',
+        avatar: ''
+      },
+      isCollapsed: false
+    }
+  },
+  mounted() {
+    this.loadUserData();
+    // Load collapsed state from localStorage if you want persistence
+    const savedState = localStorage.getItem('sidebarCollapsed');
+    if (savedState) {
+      this.isCollapsed = JSON.parse(savedState);
+    }
+  },
+  methods: {
+    loadUserData() {
+      this.user = {
+        name: localStorage.getItem('username') || 'User',
+        avatar: localStorage.getItem('avatar') || ''
+      };
+    },
+    logout() {
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('username');
+      this.$router.push('/login');
+    },
+    toggleSidebar() {
+      this.isCollapsed = !this.isCollapsed;
+      // Save state to localStorage if you want persistence
+      localStorage.setItem('sidebarCollapsed', this.isCollapsed);
+    }
+  }
+}
+</script>
+
+<style scoped>
+.sidebar {
+  width: 250px;
+  height: 100vh;
+  background-color: #1a5276;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1rem;
+  position: fixed;
+  left: 0;
+  top: 0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  transition: width 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar-collapsed {
+  width: 70px;
+}
+
+.toggle-btn {
+  position: absolute;
+  right: -15px;
+  top: 20px;
+  width: 30px;
+  height: 30px;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 5px rgba(0,0,0,0.2);
+  z-index: 1001;
+}
+
+.toggle-btn i {
+  color: #1a5276;
+  font-size: 0.9rem;
+}
+
+.app-title {
+  padding: 0 0.5rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.app-title h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  transition: all 0.3s ease;
+}
+
+.nav-menu {
+  flex: 1;
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 0.8rem 1rem;
+  border-radius: 6px;
+  color: white;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.nav-item i {
+  width: 24px;
+  margin-right: 0.8rem;
+  font-size: 1.1rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-item span {
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-collapsed .nav-item span {
+  opacity: 0;
+  width: 0;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-item.active {
+  background-color: rgba(255, 255, 255, 0.2);
+  font-weight: 500;
+}
+
+.user-section {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.user-profile:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.user-info {
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.sidebar-collapsed .user-info {
+  opacity: 0;
+  width: 0;
+}
+
+.user-name {
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.user-role {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+.logout-btn {
+  width: 100%;
+  padding: 0.7rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.logout-btn span {
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-collapsed .logout-btn span {
+  opacity: 0;
+  width: 0;
+}
+
+.logout-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn i {
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 70px;
+    padding: 1rem 0.5rem;
+  }
+  
+  .sidebar:not(.sidebar-collapsed) {
+    width: 250px;
+  }
+  
+  .toggle-btn {
+    display: none;
+  }
+  
+  .app-title h1,
+  .nav-item span,
+  .user-info,
+  .logout-btn span {
+    display: none;
+  }
+  
+  .sidebar:not(.sidebar-collapsed) .app-title h1,
+  .sidebar:not(.sidebar-collapsed) .nav-item span,
+  .sidebar:not(.sidebar-collapsed) .user-info,
+  .sidebar:not(.sidebar-collapsed) .logout-btn span {
+    display: inline;
+  }
+  
+  .nav-item {
+    justify-content: center;
+    padding: 0.8rem 0;
+  }
+  
+  .sidebar:not(.sidebar-collapsed) .nav-item {
+    justify-content: flex-start;
+    padding: 0.8rem 1rem;
+  }
+  
+  .nav-item i {
+    margin-right: 0;
+    font-size: 1.2rem;
+  }
+  
+  .sidebar:not(.sidebar-collapsed) .nav-item i {
+    margin-right: 0.8rem;
+    font-size: 1.1rem;
+  }
+  
+  .user-profile {
+    justify-content: center;
+    padding: 0.5rem 0;
+  }
+  
+  .sidebar:not(.sidebar-collapsed) .user-profile {
+    justify-content: flex-start;
+    padding: 0.5rem;
+  }
+  
+  .logout-btn {
+    padding: 0.7rem 0;
+  }
+  
+  .sidebar:not(.sidebar-collapsed) .logout-btn {
+    padding: 0.7rem;
+  }
+  
+  .logout-btn i {
+    margin-right: 0;
+  }
+  
+  .sidebar:not(.sidebar-collapsed) .logout-btn i {
+    margin-right: 0.5rem;
+  }
+}
+</style>
