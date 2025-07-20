@@ -1,12 +1,6 @@
 <template>
   <div class="nairobi-navigator">
     <!-- Header Section -->
-    <header class="app-header">
-      <div class="container">
-        <h1 class="app-title">Navigate Nairobi</h1>
-        <p class="app-subtitle">Your smart companion for traffic, matatus, and bodabodas</p>
-      </div>
-    </header>
 
     <!-- Main Content -->
     <main class="app-main">
@@ -60,11 +54,11 @@
               v-model="searchQuery"
               @keyup.enter="performSearch"
             >
-            <router-link to="/FindAMatatu">
+       
               <button class="search-btn" @click="performSearch">
-                <i class="fas fa-search"></i> Find Route
+                     <router-link to="/FindAMatatu"><i class="fas fa-search"></i> Find Route</router-link>
               </button>
-            </router-link>
+           
           </div>
         </div>
 
@@ -86,16 +80,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="app-footer">
-      <div class="container">
-        <p>© 2023 Navigate Nairobi. All rights reserved.</p>
-        <div class="footer-links">
-          <a href="#">About</a>
-          <a href="#">Contact</a>
-          <a href="#">Privacy Policy</a>
-        </div>
-      </div>
-    </footer>
+ 
   </div>
 </template>
 

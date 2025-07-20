@@ -1,93 +1,92 @@
 <template>
-  <div class="transport-tracker">
-    <!-- Loading overlay -->
-    <div v-if="!googleMapsLoaded" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <p>Loading map...</p>
+  <div class="route-selector">
+    <!-- Header -->
+    <div class="header">
+      <h1><i class="fas fa-route"></i> Nairobi Matatu Routes</h1>
+      <p>Select your start and end points</p>
     </div>
 
-    <!-- Main content -->
-    <div v-else>
-      <!-- Header with Transport Type Selector -->
-      <div class="tracker-header">
-        <h1><i class="fas fa-bus"></i> Nairobi Transport Tracker</h1>
-        <div class="transport-selector">
-          <select v-model="selectedTransport" @change="updateMapMarkers">
-            <option value="matatu">Matatus</option>
-            <option value="bus">City Buses</option>
-            <option value="train">Commuter Rail</option>
-            <option value="all">All Transport</option>
-          </select>
-        </div>
+    <!-- Route Selector -->
+    <div class="route-form">
+      <div class="select-group">
+        <label for="from"><i class="fas fa-map-marker-alt"></i> From:</label>
+        <select id="from" v-model="selectedFrom">
+          <option value="">Select starting point</option>
+          <option v-for="location in locations" :value="location" :key="'from-'+location">
+            {{ location }}
+          </option>
+        </select>
       </div>
 
-      <!-- Interactive Map Container -->
-      <div class="map-container">
-        <div id="google-map" ref="googleMap"></div>
-        
-        <!-- Map Controls Overlay -->
-        <div class="map-controls">
-          <button @click="centerToUserLocation">
-            <i class="fas fa-location-arrow"></i>
-          </button>
-          <button @click="toggleTrafficLayer">
-            <i class="fas fa-traffic-light"></i>
-          </button>
-        </div>
-        
-        <!-- Transport Info Sidebar -->
-        <div class="transport-sidebar" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-          <button class="sidebar-toggle" @click="sidebarCollapsed = !sidebarCollapsed">
-            <i :class="sidebarCollapsed ? 'fas fa-chevron-left' : 'fas fa-chevron-right'"></i>
-          </button>
-          
-          <div class="sidebar-content">
-            <h3>Nearby Transport</h3>
-            <div class="transport-list">
-              <div 
-                v-for="vehicle in filteredVehicles" 
-                :key="vehicle.id"
-                class="transport-item"
-                @click="focusOnVehicle(vehicle)"
-                :class="{ 'selected': selectedVehicle?.id === vehicle.id }"
-              >
-                <div class="vehicle-icon" :style="{ color: getTransportColor(vehicle.type) }">
-                  <i :class="getTransportIcon(vehicle.type)"></i>
-                </div>
-                <div class="vehicle-info">
-                  <h4>{{ vehicle.route }}</h4>
-                  <p>{{ vehicle.distance }} away • {{ vehicle.eta }}</p>
-                </div>
-                <button class="navigate-btn" @click.stop="startNavigation(vehicle)">
-                  <i class="fas fa-directions"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div class="swap-btn" @click="swapLocations">
+        <i class="fas fa-exchange-alt"></i>
       </div>
 
-      <!-- Navigation Panel -->
-      <div class="navigation-panel" v-if="navigationActive">
-        <div class="navigation-header">
-          <h3>Navigating to {{ navigationTarget?.route }}</h3>
-          <button @click="cancelNavigation">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="navigation-steps">
-          <div v-for="(step, index) in navigationSteps" :key="index" class="step">
-            <i class="step-icon" :class="getStepIcon(step.maneuver)"></i>
-            <div class="step-details">
-              <p>{{ step.instruction }}</p>
-              <span>{{ step.distance }} • {{ step.duration }}</span>
-            </div>
+      <div class="select-group">
+        <label for="to"><i class="fas fa-flag-checkered"></i> To:</label>
+        <select id="to" v-model="selectedTo">
+          <option value="">Select destination</option>
+          <option v-for="location in locations" :value="location" :key="'to-'+location">
+            {{ location }}
+          </option>
+        </select>
+      </div>
+
+      <button class="find-route-btn" @click="findRoute" :disabled="!canSearch">
+        <i class="fas fa-search"></i> Find Route
+      </button>
+    </div>
+
+    <!-- Results -->
+    <div v-if="selectedRoute" class="route-results">
+      <div class="route-card">
+        <div class="route-header">
+          <div class="route-number">{{ selectedRoute.number }}</div>
+          <h2>{{ selectedRoute.name }}</h2>
+          <div class="route-direction">
+            <span>{{ selectedFrom }} <i class="fas fa-arrow-right"></i> {{ selectedTo }}</span>
           </div>
         </div>
-        <div class="navigation-actions">
-          <button @click="openInGoogleMaps">
-            <i class="fab fa-google"></i> Open in Google Maps
-          </button>
+
+        <div class="route-details">
+          <div class="detail">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>Fare: {{ selectedRoute.fare }}</span>
+          </div>
+          <div class="detail">
+            <i class="fas fa-clock"></i>
+            <span>Duration: {{ selectedRoute.duration }}</span>
+          </div>
+          <div class="detail">
+            <i class="fas fa-bus"></i>
+            <span>Vehicle: {{ selectedRoute.vehicle }}</span>
+          </div>
+        </div>
+
+        <div class="stages">
+          <h3>Main Stages:</h3>
+          <div class="stage" v-for="(stage, index) in selectedRoute.stages" :key="index">
+            <div class="stage-number">{{ index + 1 }}</div>
+            <div class="stage-name">{{ stage }}</div>
+          </div>
+        </div>
+
+        <button class="save-route-btn" @click="saveRoute">
+          <i class="fas fa-bookmark"></i> Save This Route
+        </button>
+      </div>
+    </div>
+
+    <!-- Popular Routes -->
+    <div class="popular-routes" v-if="!selectedRoute">
+      <h2><i class="fas fa-fire"></i> Popular Routes</h2>
+      <div class="route-grid">
+        <div class="popular-route" v-for="route in popularRoutes" :key="route.id" @click="selectPopularRoute(route)">
+          <div class="popular-route-number">{{ route.number }}</div>
+          <div class="popular-route-name">{{ route.name }}</div>
+          <div class="popular-route-direction">
+            {{ route.from }} <i class="fas fa-arrow-right"></i> {{ route.to }}
+          </div>
         </div>
       </div>
     </div>
@@ -96,670 +95,370 @@
 
 <script>
 export default {
-  name: 'TransportTracker',
+  name: 'RouteSelector',
   data() {
     return {
-      selectedTransport: 'matatu',
-      sidebarCollapsed: false,
-      navigationActive: false,
-      navigationTarget: null,
-      navigationSteps: [],
-      map: null,
-      directionsService: null,
-      directionsRenderer: null,
-      trafficLayer: null,
-      markers: [],
-      googleMapsLoaded: false,
-      selectedVehicle: null,
-      loading: false,
-      error: null,
-      vehicles: [
+      selectedFrom: '',
+      selectedTo: '',
+      selectedRoute: null,
+      locations: [
+        'CBD', 'Westlands', 'Kikuyu', 'Thika', 'Rongai', 
+        'Karen', 'Langata', 'Embakasi', 'Donholm', 'Kasarani'
+      ],
+      popularRoutes: [
         {
-          id: 'm46',
-          type: 'matatu',
-          route: '46 - Kikuyu',
-          position: { lat: -1.2641, lng: 36.8036 },
-          distance: '350m',
-          eta: '2 min',
-          speed: '25 km/h',
-          direction: 'CBD → Kikuyu'
+          id: 1,
+          number: '46',
+          name: 'Kikuyu Route',
+          from: 'CBD',
+          to: 'Kikuyu',
+          fare: 'KSh 50-80',
+          duration: '45 min',
+          vehicle: '14-seater Matatu',
+          stages: ['CBD', 'Westlands', 'Kangemi', 'Kinoo', 'Kikuyu']
         },
         {
-          id: 'm34',
-          type: 'matatu',
-          route: '34 - Rongai',
-          position: { lat: -1.2689, lng: 36.8072 },
-          distance: '1.2km',
-          eta: '5 min',
-          speed: '18 km/h',
-          direction: 'CBD → Rongai'
+          id: 2,
+          number: '34',
+          name: 'Rongai Route',
+          from: 'CBD',
+          to: 'Rongai',
+          fare: 'KSh 60-100',
+          duration: '1 hr',
+          vehicle: '14-seater Matatu',
+          stages: ['CBD', 'South C', 'Galleria', 'Bomas', 'Rongai']
         },
         {
-          id: 'b100',
-          type: 'bus',
-          route: 'City Hoppa',
-          position: { lat: -1.2702, lng: 36.8011 },
-          distance: '800m',
-          eta: '4 min',
-          speed: '20 km/h',
-          direction: 'Westlands → CBD'
+          id: 3,
+          number: '111',
+          name: 'Kawangware Express',
+          from: 'CBD',
+          to: 'Kawangware',
+          fare: 'KSh 40-60',
+          duration: '30 min',
+          vehicle: '25-seater Minibus',
+          stages: ['CBD', 'Ngara', 'Westlands', 'Kawangware']
         },
         {
-          id: 't12',
-          type: 'train',
-          route: 'Syokimau Train',
-          position: { lat: -1.2598, lng: 36.8123 },
-          distance: '2.5km',
-          eta: '8 min',
-          speed: '40 km/h',
-          direction: 'Central → Syokimau'
+          id: 4,
+          number: '24',
+          name: 'Karen Luxury',
+          from: 'CBD',
+          to: 'Karen',
+          fare: 'KSh 100-150',
+          duration: '1 hr 15 min',
+          vehicle: '33-seater Shuttle',
+          stages: ['CBD', 'Adams Arcade', 'Hardy', 'Karen']
         }
       ]
     }
   },
   computed: {
-    filteredVehicles() {
-      if (this.selectedTransport === 'all') return this.vehicles;
-      return this.vehicles.filter(v => v.type === this.selectedTransport);
+    canSearch() {
+      return this.selectedFrom && this.selectedTo && this.selectedFrom !== this.selectedTo
     }
-  },
-  mounted() {
-    this.initializeMap();
   },
   methods: {
-    async initializeMap() {
-      this.loading = true;
-      this.error = null;
+    findRoute() {
+      // In a real app, this would query your route database
+      // For demo, we'll just find the first popular route that matches
+      const matchedRoute = this.popularRoutes.find(route => 
+        (route.from === this.selectedFrom && route.to === this.selectedTo) ||
+        (route.from === this.selectedTo && route.to === this.selectedFrom)
+      )
       
-      try {
-        await this.$nextTick();
-        
-        if (!this.$refs.mapContainer) {
-          throw new Error('Map container element not found');
-        }
-
-        if (!window.google || !window.google.maps) {
-          await this.loadGoogleMaps();
-        }
-
-        this.initGoogleMap();
-      } catch (err) {
-        console.error('Map initialization error:', err);
-        this.error = err.message;
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    loadGoogleMaps() {
-      return new Promise((resolve, reject) => {
-        if (window.google && window.google.maps) {
-          resolve();
-          return;
-        }
-
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=AIzaSyDgbJ5ExBDeVQlEinUl8siP6shaFioq8_w&libraries=places,geometry`;
-        script.async = true;
-        script.defer = true;
-        
-        script.onload = () => {
-          if (window.google && window.google.maps) {
-            this.googleMapsLoaded = true;
-            resolve();
-          } else {
-            reject(new Error('Google Maps API failed to load'));
-          }
-        };
-        
-        script.onerror = () => {
-          reject(new Error('Failed to load Google Maps script'));
-        };
-
-        document.head.appendChild(script);
-      });
-    },
-
-    initGoogleMap() {
-      try {
-        this.map = new google.maps.Map(this.$refs.mapContainer, {
-          center: { lat: -1.2689, lng: 36.8072 },
-          zoom: 14,
-          styles: [
-            {
-              featureType: "poi",
-              elementType: "labels",
-              stylers: [{ visibility: "off" }]
-            }
-          ]
-        });
-
-        this.directionsService = new google.maps.DirectionsService();
-        this.directionsRenderer = new google.maps.DirectionsRenderer({
-          map: this.map,
-          suppressMarkers: true
-        });
-
-        this.trafficLayer = new google.maps.TrafficLayer();
-        this.updateMapMarkers();
-      } catch (error) {
-        console.error('Map initialization failed:', error);
-        throw error;
-      }
-    },
-    
-    updateMapMarkers() {
-      if (!this.map) return;
-
-      this.clearMarkers();
-
-      this.filteredVehicles.forEach(vehicle => {
-        const marker = new google.maps.Marker({
-          position: vehicle.position,
-          map: this.map,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor: this.getTransportColor(vehicle.type),
-            fillOpacity: 1,
-            strokeWeight: 0,
-            scale: 8
-          },
-          title: `${vehicle.route} (${vehicle.direction})`
-        });
-
-        const infoWindow = new google.maps.InfoWindow({
-          content: this.getInfoWindowContent(vehicle)
-        });
-
-        marker.addListener('click', () => {
-          infoWindow.open(this.map, marker);
-          this.bindInfoWindowButton(vehicle);
-        });
-
-        this.markers.push(marker);
-      });
-    },
-
-    getInfoWindowContent(vehicle) {
-      return `
-        <div class="map-info-window">
-          <h4>${vehicle.route}</h4>
-          <p>${vehicle.direction}</p>
-          <p>Distance: ${vehicle.distance}</p>
-          <p>ETA: ${vehicle.eta}</p>
-          <button class="map-navigate-btn">Navigate</button>
-        </div>
-      `;
-    },
-
-    bindInfoWindowButton(vehicle) {
-      setTimeout(() => {
-        const btn = document.querySelector('.map-navigate-btn');
-        if (btn) {
-          btn.onclick = () => this.startNavigation(vehicle);
-        }
-      }, 100);
-    },
-
-    clearMarkers() {
-      this.markers.forEach(marker => marker.setMap(null));
-      this.markers = [];
-    },
-    
-    getTransportIcon(type) {
-      const icons = {
-        matatu: 'fas fa-bus',
-        bus: 'fas fa-bus-alt',
-        train: 'fas fa-train'
-      };
-      return icons[type] || 'fas fa-bus';
-    },
-    
-    getTransportColor(type) {
-      const colors = {
-        matatu: '#FF5722',
-        bus: '#2196F3',
-        train: '#4CAF50'
-      };
-      return colors[type] || '#9E9E9E';
-    },
-    
-    centerToUserLocation() {
-      if (!this.map) return;
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          position => {
-            this.map.setCenter({
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            });
-          },
-          error => {
-            console.error("Geolocation error:", error);
-          }
-        );
-      }
-    },
-    
-    toggleTrafficLayer() {
-      if (!this.trafficLayer) return;
-      
-      if (this.trafficLayer.getMap()) {
-        this.trafficLayer.setMap(null);
+      if (matchedRoute) {
+        this.selectedRoute = matchedRoute
       } else {
-        this.trafficLayer.setMap(this.map);
+        alert(`No direct route found from ${this.selectedFrom} to ${this.selectedTo}. Try changing your locations.`)
       }
     },
-    
-    focusOnVehicle(vehicle) {
-      if (!this.map) return;
-      
-      this.selectedVehicle = vehicle;
-      this.map.setCenter(vehicle.position);
-      this.map.setZoom(16);
+    swapLocations() {
+      const temp = this.selectedFrom
+      this.selectedFrom = this.selectedTo
+      this.selectedTo = temp
+      this.selectedRoute = null
     },
-    
-    startNavigation(vehicle) {
-      if (!this.map || !this.directionsService) return;
-
-      this.navigationActive = true;
-      this.navigationTarget = vehicle;
-      
-      navigator.geolocation.getCurrentPosition(
-        position => {
-          this.calculateRoute(
-            position.coords.latitude,
-            position.coords.longitude,
-            vehicle.position.lat,
-            vehicle.position.lng
-          );
-        },
-        error => {
-          console.error("Navigation error:", error);
-        }
-      );
+    selectPopularRoute(route) {
+      this.selectedFrom = route.from
+      this.selectedTo = route.to
+      this.selectedRoute = route
     },
-
-    calculateRoute(startLat, startLng, endLat, endLng) {
-      const origin = new google.maps.LatLng(startLat, startLng);
-      const destination = new google.maps.LatLng(endLat, endLng);
-      
-      this.directionsService.route(
-        {
-          origin: origin,
-          destination: destination,
-          travelMode: google.maps.TravelMode.WALKING
-        },
-        (response, status) => {
-          if (status === 'OK') {
-            this.directionsRenderer.setDirections(response);
-            this.processSteps(response.routes[0].legs[0].steps);
-          }
-        }
-      );
-    },
-    
-    processSteps(steps) {
-      this.navigationSteps = steps.map(step => ({
-        instruction: step.instructions.replace(/<[^>]*>/g, ''),
-        distance: step.distance.text,
-        duration: step.duration.text,
-        maneuver: step.maneuver || 'straight'
-      }));
-    },
-    
-    getStepIcon(maneuver) {
-      const icons = {
-        'turn-left': 'fas fa-arrow-turn-up-left',
-        'turn-right': 'fas fa-arrow-turn-up-right',
-        // ... other icons ...
-      };
-      return icons[maneuver] || 'fas fa-arrow-up';
-    },
-    
-    cancelNavigation() {
-      this.navigationActive = false;
-      if (this.directionsRenderer) {
-        this.directionsRenderer.setDirections({ routes: [] });
-      }
-    },
-    
-    openInGoogleMaps() {
-      if (!this.navigationTarget) return;
-      
-      const url = `https://www.google.com/maps/dir/?api=1&destination=${
-        this.navigationTarget.position.lat
-      },${
-        this.navigationTarget.position.lng
-      }&travelmode=walking`;
-      
-      window.open(url, '_blank');
-    }
-  },
-  beforeUnmount() {
-    this.clearMarkers();
-    if (this.map) {
-      google.maps.event.clearInstanceListeners(this.map);
+    saveRoute() {
+      alert(`Route ${this.selectedRoute.number} saved to your favorites!`)
+      // In a real app, this would save to user's account
     }
   }
 }
 </script>
 
 <style scoped>
-.transport-tracker {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
+.route-selector {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Roboto, sans-serif;
 }
 
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
+.header {
+  text-align: center;
+  margin-bottom: 30px;
 }
 
-.loading-spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #1a5276;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-  margin-bottom: 15px;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.tracker-header {
-  padding: 15px;
-  background: #1a5276;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.tracker-header h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.transport-selector select {
-  padding: 8px 15px;
-  border-radius: 5px;
-  border: none;
-  background: white;
-}
-
-.map-container {
-  flex: 1;
-  position: relative;
-}
-
-#google-map {
-  height: 100%;
-  width: 100%;
-}
-
-.map-controls {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.map-controls button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: white;
-  border: none;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  cursor: pointer;
+.header h1 {
+  color: #1a5276;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1a5276;
+  gap: 10px;
 }
 
-.transport-sidebar {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 100%;
-  background: white;
-  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-  transition: transform 0.3s;
-  z-index: 10;
-}
-
-.sidebar-collapsed {
-  transform: translateX(270px);
-}
-
-.sidebar-toggle {
-  position: absolute;
-  left: -30px;
-  top: 50%;
-  width: 30px;
-  height: 60px;
-  background: white;
-  border: none;
-  border-radius: 5px 0 0 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-}
-
-.sidebar-content {
-  padding: 15px;
-  height: 100%;
-  overflow-y: auto;
-}
-
-.sidebar-content h3 {
-  margin-top: 0;
-  color: #1a5276;
-}
-
-.transport-list {
+.route-form {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.transport-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.transport-item:hover {
-  background: #f5f5f5;
-}
-
-.transport-item.selected {
-  background: #e3f2fd;
-}
-
-.vehicle-icon {
-  font-size: 1.2rem;
-  margin-right: 10px;
-  width: 30px;
-  text-align: center;
-}
-
-.vehicle-info {
-  flex: 1;
-}
-
-.vehicle-info h4 {
-  margin: 0;
-  font-size: 1rem;
-  color: #333;
-}
-
-.vehicle-info p {
-  margin: 3px 0 0;
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.navigate-btn {
-  background: none;
-  border: none;
-  color: #1a5276;
-  cursor: pointer;
-  font-size: 1.1rem;
-}
-
-.navigation-panel {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  gap: 15px;
   background: white;
-  padding: 15px;
-  box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-  z-index: 10;
-  max-height: 50vh;
-  overflow-y: auto;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
 }
 
-.navigation-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.navigation-header h3 {
-  margin: 0;
-  color: #1a5276;
-}
-
-.navigation-header button {
-  background: none;
-  border: none;
-  color: #666;
-  cursor: pointer;
-}
-
-.navigation-steps {
+.select-group {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 5px;
 }
 
-.step {
+.select-group label {
+  font-weight: 500;
+  color: #555;
   display: flex;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.step:last-child {
-  border-bottom: none;
-}
-
-.step-icon {
-  font-size: 1rem;
-  color: #1a5276;
-  width: 20px;
-  text-align: center;
-  margin-top: 2px;
-}
-
-.step-details p {
-  margin: 0;
-  font-size: 0.9rem;
-}
-
-.step-details span {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.navigation-actions {
-  margin-top: 15px;
-  text-align: center;
-}
-
-.navigation-actions button {
-  background: #1a5276;
-  color: white;
-  border: none;
-  padding: 10px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-  display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.map-info-window {
-  padding: 10px;
-  font-family: Arial, sans-serif;
+select {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
 }
 
-.map-info-window h4 {
-  margin: 0 0 5px 0;
-  color: #1a5276;
+.swap-btn {
+  align-self: center;
+  background: #f8f9fa;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.map-info-window p {
-  margin: 0 0 5px 0;
-  font-size: 0.9rem;
+.swap-btn:hover {
+  background: #e9ecef;
+  transform: rotate(180deg);
 }
 
-.map-navigate-btn {
+.find-route-btn {
+  padding: 12px;
   background: #1a5276;
   color: white;
   border: none;
-  padding: 5px 10px;
-  border-radius: 3px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
-  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.3s;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .transport-sidebar {
-    width: 250px;
+.find-route-btn:hover {
+  background: #154360;
+}
+
+.find-route-btn:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+.route-card {
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+  margin-bottom: 30px;
+}
+
+.route-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.route-number {
+  background: #1a5276;
+  color: white;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0 auto 10px;
+}
+
+.route-header h2 {
+  margin: 10px 0;
+  color: #1a5276;
+}
+
+.route-direction {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.route-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin: 20px 0;
+}
+
+.detail {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail i {
+  color: #1a5276;
+}
+
+.stages {
+  margin: 25px 0;
+}
+
+.stages h3 {
+  margin-bottom: 15px;
+  color: #1a5276;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #eee;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.stage-number {
+  background: #1a5276;
+  color: white;
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+}
+
+.save-route-btn {
+  width: 100%;
+  padding: 12px;
+  background: #2ecc71;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background 0.3s;
+}
+
+.save-route-btn:hover {
+  background: #27ae60;
+}
+
+.popular-routes h2 {
+  color: #1a5276;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.route-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.popular-route {
+  background: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.popular-route:hover {
+  transform: translateY(-3px);
+}
+
+.popular-route-number {
+  background: #1a5276;
+  color: white;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.popular-route-name {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.popular-route-direction {
+  font-size: 0.8rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+@media (max-width: 600px) {
+  .route-form {
+    padding: 15px;
   }
   
-  .sidebar-collapsed {
-    transform: translateX(220px);
-  }
-  
-  .tracker-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+  .route-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
