@@ -41,13 +41,13 @@ const routes = [
     path: '/traffic',
     name: 'Traffic',
     component: Traffic,
-    meta: { requiresAuth: true }
+  
   },
   {
     path: '/popular-routes',
     name: 'PopularRoutes',
     component: PopularRoutes,
-    meta: { requiresAuth: true }
+   
   },
   {
     path: '/boda',
@@ -71,7 +71,7 @@ const routes = [
     path: '/support',
     name: 'HelpSupport',
     component: HelpSupport,
-    meta: { requiresAuth: true }
+   
   }
 ]
 
