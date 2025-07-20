@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-slate-900 text-gray-100 overflow-hidden">
+  <div v-if="showLayout" class="flex h-screen bg-slate-900 text-gray-100 overflow-hidden">
     <!-- Sidebar -->
     <div class="sidebar-container">
       <!-- Desktop Sidebar -->
@@ -38,15 +38,27 @@
           <div class="flex-shrink-0 p-4 border-t border-slate-700 animate-fade-in-up">
             <div class="flex items-center">
               <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-105 transition-transform">
-                <span class="text-sm font-medium text-white">U</span>
+                <span class="text-sm font-medium text-white">
+                  {{ username.charAt(0).toUpperCase() }}
+                </span>
               </div>
               <div class="ml-3 flex-1 min-w-0">
-                <p class="text-sm font-medium text-white truncate">User Profile</p>
+                <p class="text-sm font-medium text-white truncate">{{ username }}</p>
                 <p class="text-xs text-gray-400 truncate">Online</p>
               </div>
-              <button class="text-gray-400 hover:text-white hover:rotate-180 transition-all duration-500">
-                <i class="fas fa-cog"></i>
-              </button>
+              <div class="flex space-x-2">
+                <button 
+                  @click="handleLogout" 
+                  class="text-gray-400 hover:text-white transition-all duration-500"
+                  :disabled="isLoggingOut"
+                >
+                  <i v-if="!isLoggingOut" class="fas fa-sign-out-alt"></i>
+                  <i v-else class="fas fa-spinner fa-spin"></i>
+                </button>
+                <button class="text-gray-400 hover:text-white hover:rotate-180 transition-all duration-500">
+                  <i class="fas fa-cog"></i>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -148,33 +160,93 @@
                 <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 animate-ping opacity-75"></span>
                 <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400"></span>
               </button>
-              <button class="p-2 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg hover:rotate-45 transition-transform duration-500">
-                <i class="fas fa-cog"></i>
-              </button>
             </div>
           </div>
         </div>
       </header>
 
-     <main class="flex-1 overflow-y-auto p-6">
-  <router-view v-slot="{ Component }">
-    <transition name="page" mode="out-in">
-      <component :is="Component" :searchQuery="searchQuery" />
-    </transition>
-  </router-view>
-</main>
+      <main class="flex-1 overflow-y-auto p-6">
+        <router-view v-slot="{ Component }">
+          <transition name="page" mode="out-in">
+            <component :is="Component" :searchQuery="searchQuery" />
+          </transition>
+        </router-view>
+      </main>
     </div>
+  </div>
+  <div v-else class="h-screen">
+    <router-view />
   </div>
 </template>
 
 <script>
+import { computed, ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import axios from 'axios'
+
 export default {
   name: 'App',
+  setup() {
+    const route = useRoute()
+    const router = useRouter()
+    const showLayout = computed(() => !route.meta.hideLayout)
+    const username = ref('User')
+    const isLoggingOut = ref(false)
+    const sidebarOpen = ref(false)
+    const searchQuery = ref('')
+    const isSearchFocused = ref(false)
+    
+    const fetchUserData = () => {
+      const userData = localStorage.getItem('user')
+      if (userData) {
+        try {
+          const user = JSON.parse(userData)
+          username.value = user.username || 'User'
+        } catch (e) {
+          console.error('Error parsing user data:', e)
+        }
+      }
+    }
+
+    const handleLogout = async () => {
+      isLoggingOut.value = true
+      try {
+        await axios.post('http://127.0.0.1:8000/api/logout/', null, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+          }
+        })
+      } catch (error) {
+        console.error('Logout error:', error)
+      } finally {
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
+        localStorage.removeItem('user')
+        username.value = 'User'
+        router.push('/login')
+        isLoggingOut.value = false
+      }
+    }
+
+    // Add event listener for user login events
+    onMounted(() => {
+      fetchUserData() // Initial load
+      window.addEventListener('user-login', fetchUserData)
+    })
+
+    return {
+      showLayout,
+      username,
+      isLoggingOut,
+      sidebarOpen,
+      searchQuery,
+      isSearchFocused,
+      fetchUserData,
+      handleLogout
+    }
+  },
   data() {
     return {
-      sidebarOpen: false,
-      searchQuery: '',
-      isSearchFocused: false,
       navigationItems: [
         { name: 'Dashboard', icon: 'fas fa-home', path: '/' },
         { name: 'Live Traffic', icon: 'fas fa-traffic-light', path: '/traffic' },
@@ -190,6 +262,7 @@ export default {
 </script>
 
 <style scoped>
+/* Your existing styles remain unchanged */
 /* Custom scrollbar */
 .custom-scrollbar {
   scrollbar-width: thin;
@@ -301,6 +374,48 @@ a:focus {
 .page-leave-to {
   opacity: 0;
   transform: translateX(-50px);
+}
+/* Replace your existing scrollbar styles with these */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b; /* slate-800 */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569; /* slate-600 */
+  border-radius: 4px;
+  border: 1px solid #334155; /* slate-700 */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b; /* slate-500 */
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #1e293b;
+}
+html {
+  scroll-behavior: smooth;
+}
+
+/* Disable smooth scrolling when reduced motion is preferred */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* For the main content area */
+.overflow-y-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 #1e293b;
 }
 /* Pulse animation for notifications */
 @keyframes pulse {

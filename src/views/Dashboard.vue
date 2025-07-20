@@ -36,15 +36,26 @@
             :key="index"
             class="flex items-start space-x-3 mb-4"
           >
-            <div :class="getAvatarColor(msg.name)" class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
+            <div 
+              :class="[
+                getAvatarColor(msg.name),
+                msg.isCurrentUser ? 'ring-2 ring-blue-400' : ''
+              ]" 
+              class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+            >
               <span class="text-white font-medium text-xs">{{ msg.avatar }}</span>
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center space-x-2 mb-1">
-                <span class="font-medium text-white text-sm">{{ msg.name }}</span>
+                <span class="font-medium text-white text-sm">{{ msg.username }}</span>
                 <span class="text-gray-400 text-xs">{{ msg.time }}</span>
               </div>
-              <p class="text-gray-300 text-sm bg-slate-700 rounded-lg p-3">{{ msg.message }}</p>
+              <p 
+                class="text-gray-300 text-sm rounded-lg p-3"
+                :class="msg.isCurrentUser ? 'bg-blue-600/20' : 'bg-slate-700'"
+              >
+                {{ msg.message }}
+              </p>
             </div>
           </div>
         </div>
@@ -119,6 +130,8 @@
 </template>
 
 <script>
+import api from '@/api';
+
 export default {
   name: 'Dashboard',
   props: ['searchQuery'],
@@ -150,32 +163,7 @@ export default {
           iconBg: 'bg-purple-500' 
         }
       ],
-      chatMessages: [
-        {
-          name: 'Wanjiru',
-          message: 'Anyone knows if Thika Road is clear?',
-          time: '10:30 AM',
-          avatar: 'W'
-        },
-        {
-          name: 'Kamau',
-          message: "Heavy traffic near Garden City. Use alternative routes.",
-          time: '10:32 AM',
-          avatar: 'K'
-        },
-        {
-          name: 'Akinyi',
-          message: 'Mombasa Road also congested. Waiyaki Way is better.',
-          time: '10:35 AM',
-          avatar: 'A'
-        },
-        {
-          name: 'Mutua',
-          message: 'Thanks for the update! Taking Waiyaki Way now.',
-          time: '10:40 AM',
-          avatar: 'M'
-        }
-      ],
+      chatMessages: [],
       recentUpdates: [
         {
           road: 'Thika Road',
@@ -208,19 +196,51 @@ export default {
         { name: 'Book Boda', icon: 'fas fa-motorcycle', color: '#10b981' },
         { name: 'Emergency', icon: 'fas fa-phone', color: '#f59e0b' }
       ],
-      newMessage: ''
+      newMessage: '',
+      currentUser: null
     }
   },
+  mounted() {
+    this.loadCurrentUser();
+    this.fetchMessages();
+  },
   methods: {
-    sendMessage() {
-      if (this.newMessage.trim()) {
-        this.chatMessages.push({
-          name: 'You',
-          message: this.newMessage,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          avatar: 'Y'
+    loadCurrentUser() {
+      const userData = JSON.parse(localStorage.getItem('user'));
+      this.currentUser = userData?.username || 'You';
+    },
+    async fetchMessages() {
+      try {
+        const res = await api.get('/messages/');
+        this.chatMessages = res.data.map(msg => {
+          const isCurrentUser = msg.sender === this.currentUser;
+          return {
+            name: msg.sender,
+            username: isCurrentUser ? 'You' : msg.sender,
+            message: msg.content,
+            time: new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            avatar: isCurrentUser 
+              ? this.currentUser.charAt(0).toUpperCase() 
+              : msg.sender.charAt(0).toUpperCase(),
+            isCurrentUser
+          };
         });
-        this.newMessage = '';
+      } catch (err) {
+        console.error('Failed to load messages:', err);
+      }
+    },
+    async sendMessage() {
+      if (this.newMessage.trim()) {
+        try {
+          await api.post('/messages/', {
+            sender: this.currentUser,
+            content: this.newMessage
+          });
+          this.newMessage = '';
+          this.fetchMessages();
+        } catch (err) {
+          console.error('Failed to send message:', err);
+        }
       }
     },
     getAvatarColor(name) {
@@ -234,3 +254,13 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #4b5563;
+  border-radius: 3px;
+}
+</style>
