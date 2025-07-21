@@ -53,19 +53,19 @@ const routes = [
     path: '/boda',
     name: 'BodaDirectory',
     component: BodaDirectory,
-    meta: { requiresAuth: true }
+    // meta: { requiresAuth: true }
   },
   {
     path: '/planner',
     name: 'RoutePlanner',
     component: RoutePlanner,
-    meta: { requiresAuth: true }
+    // meta: { requiresAuth: true }
   },
   {
     path: '/notifications',
     name: 'Notifications',
     component: Notifications,
-    meta: { requiresAuth: true }
+    // meta: { requiresAuth: true }
   },
   {
     path: '/support',

@@ -1,18 +1,18 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 px-4 relative overflow-hidden">
+  <div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 px-4 relative overflow-hidden">
     <!-- Animated Background Elements -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
-      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse"></div>
-      <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
-      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-blue-600/5 rounded-full blur-2xl animate-spin-slow"></div>
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/5 rounded-full blur-2xl animate-spin-slow"></div>
     </div>
 
     <!-- Floating Particles -->
     <div class="particles absolute inset-0 pointer-events-none">
       <div 
-        v-for="n in 20" 
+        v-for="n in 25" 
         :key="n"
-        class="absolute w-1 h-1 bg-purple-400/20 rounded-full animate-float"
+        class="absolute w-1 h-1 bg-blue-400/30 rounded-full animate-float"
         :style="{
           left: Math.random() * 100 + '%',
           top: Math.random() * 100 + '%',
@@ -22,102 +22,109 @@
       ></div>
     </div>
 
-    <div class="w-full max-w-md animate-slide-up relative z-10">
-      <!-- Registration Card with Glass Effect -->
-      <div class="backdrop-blur-xl bg-white/5 rounded-2xl shadow-2xl border border-white/10 overflow-hidden transition-all duration-500 hover:shadow-purple-500/20 hover:scale-[1.02] group">
+    <div class="w-full max-w-lg animate-slide-up relative z-10">
+      <!-- Registration Card with Modern Glass Effect -->
+      <div class="backdrop-blur-2xl bg-slate-900/40 rounded-3xl shadow-2xl border border-slate-700/50 overflow-hidden transition-all duration-500 hover:shadow-blue-500/20 hover:scale-[1.01] group">
         <!-- Gradient Border Effect -->
-        <div class="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-indigo-600/20 rounded-2xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-cyan-600/10 to-indigo-600/10 rounded-3xl blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-500"></div>
         
         <div class="relative">
-          <!-- Header with 3D Effect -->
-          <div class="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 p-8 text-center relative overflow-hidden">
+          <!-- Header with Modern 3D Effect -->
+          <div class="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-xl p-8 text-center relative overflow-hidden border-b border-slate-700/50">
             <!-- Animated Lines -->
             <div class="absolute top-0 left-0 w-full h-full">
-              <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer"></div>
-              <div class="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shimmer delay-1000"></div>
+              <div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent animate-shimmer"></div>
+              <div class="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-shimmer delay-1000"></div>
             </div>
             
-            <div class="w-20 h-20 bg-white/15 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 transform hover:rotate-12 transition-transform duration-300 shadow-lg relative">
-              <div class="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent rounded-2xl"></div>
-              <i class="fas fa-user-plus text-white text-3xl relative z-10"></i>
+            <div class="w-24 h-24 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-6 transform hover:rotate-6 transition-all duration-500 shadow-xl relative border border-blue-400/20">
+              <div class="absolute inset-0 bg-gradient-to-br from-blue-400/10 to-transparent rounded-2xl"></div>
+              <i class="fas fa-user-plus text-blue-400 text-4xl relative z-10"></i>
             </div>
-            <h2 class="text-3xl font-bold text-white mb-1 tracking-tight">Join Nairobi Connect</h2>
-            <p class="text-purple-100 text-lg font-medium">Create your premium account</p>
+            <h2 class="text-4xl font-bold bg-gradient-to-r from-blue-400 via-cyan-400 to-indigo-400 bg-clip-text text-transparent mb-2 tracking-tight">Join Nairobi Connect</h2>
+            <p class="text-slate-300 text-lg font-medium">Create your account today</p>
           </div>
 
-          <!-- Form with Enhanced Styling -->
-          <form @submit.prevent="handleRegister" class="p-8 space-y-6">
+          <!-- Form with Enhanced Modern Styling -->
+          <form @submit.prevent="handleRegister" class="p-8 space-y-7 bg-gradient-to-b from-slate-900/50 to-slate-900/80 backdrop-blur-xl">
             <!-- Email Field -->
             <div class="space-y-3 group">
-              <label class="text-gray-200 text-sm font-semibold uppercase tracking-wider">Email Address</label>
+              <label class="text-slate-200 text-sm font-semibold tracking-wide flex items-center">
+                <i class="fas fa-envelope mr-2 text-blue-400"></i>
+                Email Address
+              </label>
               <div class="relative">
                 <input
                   v-model="form.email"
                   type="email"
                   required
-                  class="w-full px-5 py-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 hover:bg-white/10 peer"
-                  placeholder="your@email.com"
+                  class="w-full px-5 py-4 bg-slate-800/50 backdrop-blur-sm border border-slate-600/50 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 focus:bg-slate-800/70 transition-all duration-300 hover:bg-slate-800/60 peer"
+                  placeholder="Enter your email"
                   @input="validateEmail"
                 />
-                <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/0 via-purple-600/0 to-purple-600/0 peer-focus:from-purple-600/10 peer-focus:via-transparent peer-focus:to-purple-600/10 pointer-events-none transition-all duration-500"></div>
-                <i class="fas fa-envelope absolute right-4 top-4 text-gray-400 peer-focus:text-purple-400 transition-colors duration-300"></i>
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-600/0 via-blue-600/0 to-blue-600/0 peer-focus:from-blue-600/5 peer-focus:via-transparent peer-focus:to-blue-600/5 pointer-events-none transition-all duration-500"></div>
               </div>
-              <p v-if="errors.email" class="text-red-400 text-sm animate-shake flex items-center">
+              <p v-if="errors.email" class="text-red-400 text-sm animate-shake flex items-center bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
                 <i class="fas fa-exclamation-circle mr-2"></i> {{ errors.email }}
               </p>
             </div>
 
             <!-- Username Field -->
             <div class="space-y-3 group">
-              <label class="text-gray-200 text-sm font-semibold uppercase tracking-wider">Username</label>
+              <label class="text-slate-200 text-sm font-semibold tracking-wide flex items-center">
+                <i class="fas fa-user mr-2 text-cyan-400"></i>
+                Username
+              </label>
               <div class="relative">
                 <input
                   v-model="form.username"
                   type="text"
                   required
-                  class="w-full px-5 py-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 hover:bg-white/10 peer"
+                  class="w-full px-5 py-4 bg-slate-800/50 backdrop-blur-sm border border-slate-600/50 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 focus:bg-slate-800/70 transition-all duration-300 hover:bg-slate-800/60 peer"
                   placeholder="Choose a unique username"
                   @input="validateUsername"
                 />
-                <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/0 via-purple-600/0 to-purple-600/0 peer-focus:from-purple-600/10 peer-focus:via-transparent peer-focus:to-purple-600/10 pointer-events-none transition-all duration-500"></div>
-                <i class="fas fa-user absolute right-4 top-4 text-gray-400 peer-focus:text-purple-400 transition-colors duration-300"></i>
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-cyan-600/0 via-cyan-600/0 to-cyan-600/0 peer-focus:from-cyan-600/5 peer-focus:via-transparent peer-focus:to-cyan-600/5 pointer-events-none transition-all duration-500"></div>
               </div>
-              <p v-if="errors.username" class="text-red-400 text-sm animate-shake flex items-center">
+              <p v-if="errors.username" class="text-red-400 text-sm animate-shake flex items-center bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
                 <i class="fas fa-exclamation-circle mr-2"></i> {{ errors.username }}
               </p>
             </div>
 
             <!-- Password Field -->
             <div class="space-y-3 group">
-              <label class="text-gray-200 text-sm font-semibold uppercase tracking-wider">Password</label>
+              <label class="text-slate-200 text-sm font-semibold tracking-wide flex items-center">
+                <i class="fas fa-lock mr-2 text-indigo-400"></i>
+                Password
+              </label>
               <div class="relative">
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
                   required
-                  class="w-full px-5 py-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 hover:bg-white/10 peer"
+                  class="w-full px-5 py-4 pr-12 bg-slate-800/50 backdrop-blur-sm border border-slate-600/50 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 focus:bg-slate-800/70 transition-all duration-300 hover:bg-slate-800/60 peer"
                   placeholder="Create a secure password"
                   @input="validatePassword"
                 />
-                <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/0 via-purple-600/0 to-purple-600/0 peer-focus:from-purple-600/10 peer-focus:via-transparent peer-focus:to-purple-600/10 pointer-events-none transition-all duration-500"></div>
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-indigo-600/0 via-indigo-600/0 to-indigo-600/0 peer-focus:from-indigo-600/5 peer-focus:via-transparent peer-focus:to-indigo-600/5 pointer-events-none transition-all duration-500"></div>
                 <button 
                   type="button" 
                   @click="togglePasswordVisibility"
-                  class="absolute right-4 top-4 text-gray-400 hover:text-purple-400 transition-colors duration-300 z-10"
+                  class="absolute right-4 top-4 text-slate-400 hover:text-indigo-400 transition-colors duration-300 z-10 p-1"
                 >
                   <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
                 </button>
               </div>
               
               <!-- Enhanced Password Strength Indicator -->
-              <div class="space-y-2">
+              <div class="space-y-3 bg-slate-800/30 p-4 rounded-xl border border-slate-700/30">
                 <div class="flex justify-between items-center">
-                  <span class="text-xs text-gray-400">Password Strength</span>
-                  <span class="text-xs font-medium" :class="{
-                    'text-red-400': passwordStrength < 1,
-                    'text-yellow-400': passwordStrength === 1,
-                    'text-blue-400': passwordStrength === 2,
-                    'text-green-400': passwordStrength === 3
+                  <span class="text-xs text-slate-400 font-medium">Password Strength</span>
+                  <span class="text-xs font-semibold px-2 py-1 rounded-md" :class="{
+                    'text-red-400 bg-red-500/10': passwordStrength < 1,
+                    'text-amber-400 bg-amber-500/10': passwordStrength === 1,
+                    'text-blue-400 bg-blue-500/10': passwordStrength === 2,
+                    'text-emerald-400 bg-emerald-500/10': passwordStrength === 3
                   }">
                     {{ getStrengthText() }}
                   </span>
@@ -128,11 +135,11 @@
                     :key="n"
                     class="h-2 rounded-full transition-all duration-700 relative overflow-hidden"
                     :class="{
-                      'bg-red-500 shadow-red-500/50': passwordStrength >= 0 && n === 1,
-                      'bg-yellow-500 shadow-yellow-500/50': passwordStrength >= 1 && n <= 2,
-                      'bg-blue-500 shadow-blue-500/50': passwordStrength >= 2 && n <= 3,
-                      'bg-green-500 shadow-green-500/50': passwordStrength >= 3 && n <= 4,
-                      'bg-white/10': n > Math.max(passwordStrength, 0)
+                      'bg-red-500 shadow-lg shadow-red-500/30': passwordStrength >= 0 && n === 1,
+                      'bg-amber-500 shadow-lg shadow-amber-500/30': passwordStrength >= 1 && n <= 2,
+                      'bg-blue-500 shadow-lg shadow-blue-500/30': passwordStrength >= 2 && n <= 3,
+                      'bg-emerald-500 shadow-lg shadow-emerald-500/30': passwordStrength >= 3 && n <= 4,
+                      'bg-slate-700/50': n > Math.max(passwordStrength, 0)
                     }"
                   >
                     <div v-if="n <= Math.max(passwordStrength, 0)" class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
@@ -143,20 +150,22 @@
 
             <!-- Confirm Password Field -->
             <div class="space-y-3 group">
-              <label class="text-gray-200 text-sm font-semibold uppercase tracking-wider">Confirm Password</label>
+              <label class="text-slate-200 text-sm font-semibold tracking-wide flex items-center">
+                <i class="fas fa-shield-alt mr-2 text-violet-400"></i>
+                Confirm Password
+              </label>
               <div class="relative">
                 <input
                   v-model="form.confirmPassword"
                   :type="showPassword ? 'text' : 'password'"
                   required
-                  class="w-full px-5 py-4 bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all duration-300 hover:bg-white/10 peer"
+                  class="w-full px-5 py-4 bg-slate-800/50 backdrop-blur-sm border border-slate-600/50 rounded-2xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500/50 focus:bg-slate-800/70 transition-all duration-300 hover:bg-slate-800/60 peer"
                   placeholder="Confirm your password"
                   @input="validateConfirmPassword"
                 />
-                <div class="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-600/0 via-purple-600/0 to-purple-600/0 peer-focus:from-purple-600/10 peer-focus:via-transparent peer-focus:to-purple-600/10 pointer-events-none transition-all duration-500"></div>
-                <i class="fas fa-lock absolute right-4 top-4 text-gray-400 peer-focus:text-purple-400 transition-colors duration-300"></i>
+                <div class="absolute inset-0 rounded-2xl bg-gradient-to-r from-violet-600/0 via-violet-600/0 to-violet-600/0 peer-focus:from-violet-600/5 peer-focus:via-transparent peer-focus:to-violet-600/5 pointer-events-none transition-all duration-500"></div>
               </div>
-              <p v-if="errors.confirmPassword" class="text-red-400 text-sm animate-shake flex items-center">
+              <p v-if="errors.confirmPassword" class="text-red-400 text-sm animate-shake flex items-center bg-red-500/10 px-3 py-2 rounded-lg border border-red-500/20">
                 <i class="fas fa-exclamation-circle mr-2"></i> {{ errors.confirmPassword }}
               </p>
             </div>
@@ -164,7 +173,7 @@
             <!-- Enhanced Submit Button -->
             <button
               type="submit"
-              class="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-700 hover:via-indigo-700 hover:to-blue-700 text-white font-bold text-lg rounded-xl transition-all duration-300 flex items-center justify-center mt-8 relative overflow-hidden group shadow-xl hover:shadow-purple-500/25 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+              class="w-full py-4 px-6 bg-gradient-to-r from-blue-600 via-cyan-600 to-indigo-600 hover:from-blue-700 hover:via-cyan-700 hover:to-indigo-700 text-white font-bold text-lg rounded-2xl transition-all duration-300 flex items-center justify-center mt-8 relative overflow-hidden group shadow-xl hover:shadow-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
               :disabled="isSubmitting || !isFormValid"
             >
               <!-- Button shine effect -->
@@ -183,7 +192,7 @@
             <!-- Enhanced Error Message -->
             <div 
               v-if="errorMessage"
-              class="p-4 bg-red-500/10 backdrop-blur-sm text-red-300 rounded-xl border border-red-500/30 animate-shake relative overflow-hidden"
+              class="p-4 bg-red-500/10 backdrop-blur-sm text-red-300 rounded-2xl border border-red-500/30 animate-shake relative overflow-hidden"
             >
               <div class="absolute inset-0 bg-red-500/5 animate-pulse"></div>
               <div class="relative z-10 flex items-center">
@@ -194,12 +203,12 @@
           </form>
 
           <!-- Enhanced Footer Links -->
-          <div class="px-8 pb-8 text-center">
-            <div class="h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-6"></div>
-            <p class="text-gray-300 text-base">Already have an account?</p>
+          <div class="px-8 pb-8 text-center bg-gradient-to-b from-slate-900/80 to-slate-900/90 backdrop-blur-xl">
+            <div class="h-px bg-gradient-to-r from-transparent via-slate-600/50 to-transparent mb-6"></div>
+            <p class="text-slate-300 text-base">Already have an account?</p>
             <a 
               href="/login" 
-              class="inline-flex items-center mt-2 text-purple-400 hover:text-purple-300 transition-all duration-300 font-semibold text-lg group"
+              class="inline-flex items-center mt-3 text-blue-400 hover:text-blue-300 transition-all duration-300 font-semibold text-lg group bg-blue-500/10 hover:bg-blue-500/20 px-4 py-2 rounded-xl border border-blue-500/20"
             >
               <i class="fas fa-sign-in-alt mr-2 group-hover:transform group-hover:scale-110 transition-transform duration-300"></i>
               Sign in here
@@ -376,10 +385,11 @@ export default {
   }
 }
 </script>
+
 <style scoped>
-/* Enhanced Animations */
+/* Enhanced Modern Animations */
 .animate-slide-up {
-  animation: slideUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: slideUp 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 .animate-shake {
@@ -387,96 +397,108 @@ export default {
 }
 
 .animate-shimmer {
-  animation: shimmer 2s linear infinite;
+  animation: shimmer 3s linear infinite;
 }
 
 .animate-float {
-  animation: float 4s ease-in-out infinite;
+  animation: float 6s ease-in-out infinite;
 }
 
 .animate-spin-slow {
-  animation: spin 20s linear infinite;
+  animation: spin 30s linear infinite;
 }
 
 @keyframes slideUp {
   from { 
     opacity: 0; 
-    transform: translateY(30px) scale(0.95); 
+    transform: translateY(40px) scale(0.95); 
+    filter: blur(10px);
   }
   to { 
     opacity: 1; 
     transform: translateY(0) scale(1); 
+    filter: blur(0);
   }
 }
 
 @keyframes shake {
   0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-8px); }
-  50% { transform: translateX(8px); }
-  75% { transform: translateX(-8px); }
+  25% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+  75% { transform: translateX(-6px); }
 }
 
 @keyframes shimmer {
-  0% { transform: translateX(-100%); }
-  100% { transform: translateX(100%); }
+  0% { transform: translateX(-100%); opacity: 0; }
+  50% { opacity: 1; }
+  100% { transform: translateX(100%); opacity: 0; }
 }
 
 @keyframes float {
   0%, 100% { 
     transform: translateY(0px) rotate(0deg); 
-    opacity: 0.1;
+    opacity: 0.2;
   }
   50% { 
-    transform: translateY(-20px) rotate(180deg); 
-    opacity: 0.3;
+    transform: translateY(-30px) rotate(180deg); 
+    opacity: 0.4;
   }
 }
 
-/* Glassmorphism enhancements */
+/* Enhanced Glassmorphism */
+.backdrop-blur-2xl {
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+}
+
 .backdrop-blur-xl {
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .backdrop-blur-sm {
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
-/* Custom scrollbar */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  background: rgba(51, 65, 85, 0.3);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(to bottom, #8b5cf6, #6366f1);
-  border-radius: 3px;
+  background: linear-gradient(to bottom, #3b82f6, #06b6d4);
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(to bottom, #7c3aed, #4f46e5);
+  background: linear-gradient(to bottom, #2563eb, #0891b2);
 }
 
-/* Enhanced focus states */
+/* Enhanced Focus States */
 input:focus {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 
+    0 10px 25px rgba(59, 130, 246, 0.15),
+    0 0 0 1px rgba(59, 130, 246, 0.1);
 }
 
-/* Button enhancements */
+/* Button Enhancements */
 button:not(:disabled):hover {
-  box-shadow: 0 15px 35px rgba(139, 92, 246, 0.3);
+  box-shadow: 
+    0 20px 40px rgba(59, 130, 246, 0.2),
+    0 0 0 1px rgba(59, 130, 246, 0.1);
 }
 
-/* Mobile responsiveness */
+/* Mobile Responsiveness */
 @media (max-width: 640px) {
-  .w-full.max-w-md {
-    max-width: 100%;
+  .max-w-lg {
+    max-width: calc(100% - 2rem);
     margin: 1rem;
   }
   
@@ -484,8 +506,31 @@ button:not(:disabled):hover {
     padding: 1.5rem;
   }
   
-  .text-3xl {
-    font-size: 1.75rem;
+  .text-4xl {
+    font-size: 2rem;
+  }
+  
+  .w-24.h-24 {
+    width: 5rem;
+    height: 5rem;
+  }
+  
+  .text-4xl {
+    font-size: 1.875rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .rounded-3xl {
+    border-radius: 1.5rem;
+  }
+  
+  .rounded-2xl {
+    border-radius: 1rem;
+  }
+  
+  .space-y-7 > * + * {
+    margin-top: 1.5rem;
   }
 }
 </style>
