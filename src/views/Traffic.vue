@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-6">
-    <!-- Traffic Header (unchanged) -->
+    <!-- Traffic Header -->
     <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -27,7 +27,7 @@
       </div>
     </div>
 
-    <!-- Search Section (modified for origin/destination) -->
+    <!-- Search Section -->
     <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div class="relative">
@@ -53,16 +53,97 @@
           <i class="fas fa-map-marker-alt absolute right-3 bottom-3 text-gray-400"></i>
         </div>
       </div>
-      <button 
-        @click="fetchTrafficData"
-        class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center space-x-2"
-      >
-        <i class="fas fa-search"></i>
-        <span>Search Route</span>
-      </button>
+      <div class="flex justify-between mt-4">
+        <button 
+          @click="fetchTrafficData"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors flex items-center space-x-2"
+        >
+          <i class="fas fa-search"></i>
+          <span>Search Route</span>
+        </button>
+        <button 
+          v-if="trafficData && !isFavorite"
+          @click="addToFavorites"
+          class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors flex items-center space-x-2"
+        >
+          <i class="fas fa-star"></i>
+          <span>Save to Favorites</span>
+        </button>
+        <button 
+          v-if="trafficData && isFavorite"
+          @click="removeFromFavorites"
+          class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors flex items-center space-x-2"
+        >
+          <i class="fas fa-star"></i>
+          <span>Saved</span>
+        </button>
+      </div>
     </div>
 
-    <!-- Traffic Filter (unchanged) -->
+    <!-- Favorites Section -->
+    <div v-if="favorites.length > 0" class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
+      <div class="px-6 py-4 border-b border-slate-700 flex justify-between items-center">
+        <h2 class="text-lg font-semibold text-white">Favorite Routes</h2>
+        <button 
+          @click="showFavorites = !showFavorites"
+          class="text-blue-400 hover:text-blue-300 text-sm font-medium flex items-center space-x-1"
+        >
+          <span>{{ showFavorites ? 'Hide' : 'Show' }}</span>
+          <i :class="['fas', showFavorites ? 'fa-chevron-up' : 'fa-chevron-down']"></i>
+        </button>
+      </div>
+      <div v-if="showFavorites" class="divide-y divide-slate-700">
+        <div 
+          v-for="(fav, index) in favorites" 
+          :key="'fav-'+index" 
+          class="p-6 hover:bg-slate-700 transition-colors cursor-pointer group"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex-1" @click="loadFavorite(fav)">
+              <div class="flex items-center space-x-3 mb-2">
+                <h3 class="text-lg font-medium text-white">{{ fav.origin }} → {{ fav.destination }}</h3>
+                <span 
+                  v-if="fav.traffic_level"
+                  :class="getTrafficStatusStyle(fav.traffic_level)" 
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                >
+                  {{ fav.traffic_level }}
+                </span>
+              </div>
+              <div v-if="fav.distance" class="flex items-center space-x-4 text-gray-400 text-sm">
+                <span class="flex items-center">
+                  <i class="fas fa-route mr-1"></i>
+                  {{ fav.distance }}
+                </span>
+                <span v-if="fav.duration || fav.duration_in_traffic" class="flex items-center">
+                  <i class="fas fa-clock mr-1"></i>
+                  {{ fav.duration_in_traffic || fav.duration }}
+                </span>
+              </div>
+              <div v-else class="text-gray-400 text-sm">
+                Click to load traffic data
+              </div>
+            </div>
+            <div class="ml-4 flex items-center space-x-2">
+              <div 
+                v-if="fav.traffic_level"
+                :class="getTrafficIconColor(fav.traffic_level)" 
+                class="w-4 h-4 rounded-full"
+              ></div>
+              <button 
+                @click.stop="removeFromFavorites(fav)"
+                class="text-gray-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Remove from favorites"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Traffic Filter -->
     <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-lg">
       <div class="flex flex-wrap items-center gap-3">
         <span class="text-white font-medium">Filter by status:</span>
@@ -83,7 +164,7 @@
       </div>
     </div>
 
-    <!-- Traffic Routes Display (updated for single route) -->
+    <!-- Traffic Routes Display -->
     <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
       <div class="px-6 py-4 border-b border-slate-700">
         <h2 class="text-lg font-semibold text-white">Current Traffic Conditions</h2>
@@ -96,7 +177,7 @@
       </div>
       
       <!-- Empty State -->
-      <div v-else-if="!trafficData" class="p-6 text-center">
+      <div v-else-if="!trafficData && !origin && !destination" class="p-6 text-center">
         <i class="fas fa-route fa-2x text-gray-500 mb-3"></i>
         <h3 class="text-lg font-medium text-gray-300 mb-1">
           No traffic data available
@@ -107,7 +188,7 @@
       </div>
       
       <!-- Results -->
-      <div v-else class="divide-y divide-slate-700">
+      <div v-else-if="trafficData" class="divide-y divide-slate-700">
         <div class="p-6 hover:bg-slate-700 transition-colors cursor-pointer">
           <div class="flex items-center justify-between">
             <div class="flex-1">
@@ -136,7 +217,61 @@
       </div>
     </div>
 
-    <!-- Auto-refresh Notice (unchanged) -->
+    <!-- Preloaded Routes Section -->
+    <div v-if="trafficRoutes.length" class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
+      <div class="px-6 py-4 border-b border-slate-700">
+        <h2 class="text-lg font-semibold text-white">Live Traffic for Popular Routes</h2>
+      </div>
+      <div class="divide-y divide-slate-700">
+        <div 
+          v-for="(route, index) in trafficRoutes" 
+          :key="index" 
+          class="p-6 hover:bg-slate-700 transition-colors cursor-pointer group"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <div class="flex items-center space-x-3 mb-2">
+                <h3 class="text-lg font-medium text-white">{{ route.origin }} → {{ route.destination }}</h3>
+                <span :class="getTrafficStatusStyle(route.traffic_level)" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium">
+                  {{ route.traffic_level }}
+                </span>
+              </div>
+              <div class="flex items-center space-x-4 text-gray-400 text-sm">
+                <span class="flex items-center">
+                  <i class="fas fa-route mr-1"></i>
+                  {{ route.distance }}
+                </span>
+                <span class="flex items-center">
+                  <i class="fas fa-clock mr-1"></i>
+                  {{ route.duration_in_traffic || route.duration }}
+                </span>
+              </div>
+            </div>
+            <div class="ml-4 flex items-center space-x-2">
+              <div :class="getTrafficIconColor(route.traffic_level)" class="w-4 h-4 rounded-full"></div>
+              <button 
+                @click.stop="addToFavorites(route)"
+                class="text-gray-400 hover:text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Add to favorites"
+                v-if="!isRouteFavorite(route)"
+              >
+                <i class="far fa-star"></i>
+              </button>
+              <button 
+                @click.stop="removeFromFavorites(route)"
+                class="text-yellow-400 opacity-100 group-hover:opacity-100 transition-opacity"
+                title="Remove from favorites"
+                v-else
+              >
+                <i class="fas fa-star"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Auto-refresh Notice -->
     <div class="bg-slate-700 border border-slate-600 rounded-xl p-4">
       <div class="flex items-center space-x-2 text-gray-300 text-sm">
         <i class="fas fa-info-circle text-blue-400"></i>
@@ -159,6 +294,15 @@ export default {
       origin: '',
       destination: '',
       trafficData: null,
+      trafficRoutes: [],
+      favorites: [],
+      showFavorites: true,
+      preloadedRoutes: [
+        { origin: 'Kasarani, Nairobi', destination: 'CBD, Nairobi' },
+        { origin: 'Pipeline, Nairobi', destination: 'CBD, Nairobi' },
+        { origin: 'Kikuyu, Nairobi', destination: 'CBD, Nairobi' },
+        { origin: 'Langata, Nairobi', destination: 'CBD, Nairobi' },
+      ],
       trafficFilters: [
         { 
           key: 'all', 
@@ -224,6 +368,13 @@ export default {
       return [this.trafficData].filter(route => 
         this.activeFilter === 'all' || route.traffic_level === this.activeFilter
       );
+    },
+    isFavorite() {
+      if (!this.trafficData) return false;
+      return this.favorites.some(fav => 
+        fav.origin === this.trafficData.origin && 
+        fav.destination === this.trafficData.destination
+      );
     }
   },
   methods: {
@@ -232,6 +383,7 @@ export default {
       
       this.isLoading = true;
       this.isRefreshing = true;
+      
       try {
         const response = await fetch(
           `http://127.0.0.1:8000/api/traffic/?origin=${encodeURIComponent(this.origin)}&destination=${encodeURIComponent(this.destination)}`
@@ -257,8 +409,37 @@ export default {
         this.isRefreshing = false;
       }
     },
+    async fetchPreloadedRoutes() {
+      this.isLoading = true;
+      const requests = this.preloadedRoutes.map(async ({ origin, destination }) => {
+        try {
+          const response = await fetch(
+            `http://127.0.0.1:8000/api/traffic/?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`
+          );
+          const data = await response.json();
+          return {
+            origin: data.origin,
+            destination: data.destination,
+            distance: data.distance,
+            duration: data.duration,
+            duration_in_traffic: data.duration_in_traffic,
+            traffic_level: data.traffic_level
+          };
+        } catch (error) {
+          console.error("Error fetching route:", origin, "→", destination, error);
+          return null;
+        }
+      });
+
+      const results = await Promise.all(requests);
+      this.trafficRoutes = results.filter(route => route !== null);
+      this.isLoading = false;
+    },
     refreshData() {
-      this.fetchTrafficData();
+      if (this.origin && this.destination) {
+        this.fetchTrafficData();
+      }
+      this.fetchPreloadedRoutes();
     },
     getTrafficStatusStyle(status) {
       const styles = {
@@ -277,14 +458,71 @@ export default {
         'light': 'bg-green-500'
       };
       return colors[status] || 'bg-gray-500';
+    },
+    addToFavorites(route = null) {
+      const favoriteRoute = route || this.trafficData;
+      if (!favoriteRoute) return;
+      
+      // Check if already in favorites
+      if (this.favorites.some(fav => 
+        fav.origin === favoriteRoute.origin && 
+        fav.destination === favoriteRoute.destination
+      )) {
+        return;
+      }
+      
+      this.favorites.push({
+        origin: favoriteRoute.origin,
+        destination: favoriteRoute.destination,
+        distance: favoriteRoute.distance,
+        duration: favoriteRoute.duration,
+        duration_in_traffic: favoriteRoute.duration_in_traffic,
+        traffic_level: favoriteRoute.traffic_level
+      });
+      
+      this.saveFavorites();
+    },
+    removeFromFavorites(route = null) {
+      const favoriteToRemove = route || this.trafficData;
+      if (!favoriteToRemove) return;
+      
+      this.favorites = this.favorites.filter(fav => 
+        !(fav.origin === favoriteToRemove.origin && 
+          fav.destination === favoriteToRemove.destination)
+      );
+      
+      this.saveFavorites();
+    },
+    loadFavorite(favorite) {
+      this.origin = favorite.origin;
+      this.destination = favorite.destination;
+      this.fetchTrafficData();
+    },
+    isRouteFavorite(route) {
+      return this.favorites.some(fav => 
+        fav.origin === route.origin && 
+        fav.destination === route.destination
+      );
+    },
+    saveFavorites() {
+      localStorage.setItem('trafficFavorites', JSON.stringify(this.favorites));
+    },
+    loadFavorites() {
+      const savedFavorites = localStorage.getItem('trafficFavorites');
+      if (savedFavorites) {
+        this.favorites = JSON.parse(savedFavorites);
+      }
     }
   },
   mounted() {
+    this.loadFavorites();
+    this.fetchPreloadedRoutes();
+    
     // Auto-refresh timer
     setInterval(() => {
       if (this.nextUpdateIn > 0) {
         this.nextUpdateIn--;
-      } else if (this.origin && this.destination) {
+      } else {
         this.refreshData();
       }
     }, 60000);
