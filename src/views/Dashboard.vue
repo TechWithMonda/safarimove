@@ -21,65 +21,7 @@
 
     <!-- Main Content Grid -->
     <div class="grid lg:grid-cols-2 gap-6">
-      <!-- Live Chat Feed -->
-      <!-- <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
-        <div class="px-6 py-4 border-b border-slate-700">
-          <h2 class="text-lg font-semibold text-white flex items-center">
-            <i class="fas fa-comments mr-2 text-blue-400"></i>
-            Live Chat Feed
-          </h2>
-        </div>
-        
-        <div class="p-6 max-h-96 overflow-y-auto custom-scrollbar">
-          <div 
-            v-for="(msg, index) in chatMessages" 
-            :key="index"
-            class="flex items-start space-x-3 mb-4"
-          >
-            <div 
-              :class="[
-                getAvatarColor(msg.name),
-                msg.isCurrentUser ? 'ring-2 ring-blue-400' : ''
-              ]" 
-              class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-            >
-              <span class="text-white font-medium text-xs">{{ msg.avatar }}</span>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center space-x-2 mb-1">
-                <span class="font-medium text-white text-sm">{{ msg.username }}</span>
-                <span class="text-gray-400 text-xs">{{ msg.time }}</span>
-              </div>
-              <p 
-                class="text-gray-300 text-sm rounded-lg p-3"
-                :class="msg.isCurrentUser ? 'bg-blue-600/20' : 'bg-slate-700'"
-              >
-                {{ msg.message }}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div class="px-6 py-4 border-t border-slate-700">
-          <div class="flex space-x-3">
-            <input 
-              v-model="newMessage"
-              @keyup.enter="sendMessage"
-              type="text" 
-              placeholder="Share traffic updates..."
-              class="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-            <button 
-              @click="sendMessage"
-              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
-            >
-              <i class="fas fa-paper-plane"></i>
-            </button>
-          </div>
-        </div>
-      </div> -->
-   <LiveChatFeed  />
-
+      <LiveChatFeed />
 
       <!-- Recent Updates -->
       <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
@@ -121,7 +63,9 @@
         <button 
           v-for="(action, index) in quickActions" 
           :key="index"
+          @click="handleQuickAction(action)"
           class="flex flex-col items-center p-4 bg-slate-700 rounded-lg hover:bg-slate-600 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          :aria-label="action.name"
         >
           <i :class="action.icon" class="text-2xl mb-2" :style="{ color: action.color }"></i>
           <span class="text-sm text-white font-medium">{{ action.name }}</span>
@@ -129,138 +73,177 @@
       </div>
     </div>
   </div>
+  
 </template>
 
-<script>
+<script setup>
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import api from '@/api';
+import LiveChatFeed from '../components/LiveChatFeed.vue';
 
-import LiveChatFeed  from '../components/LiveChatFeed.vue';
+const router = useRouter();
 
-export default {
-  name: 'Dashboard',
-       components: {
-    LiveChatFeed
+// Reactive data
+const stats = ref([
+  { 
+    label: 'Active Routes', 
+    value: '24', 
+    icon: 'fas fa-route', 
+    iconBg: 'bg-blue-500' 
   },
-    
-  props: ['searchQuery'],
-  data() {
-    return {
-      stats: [
-        { 
-          label: 'Active Routes', 
-          value: '24', 
-          icon: 'fas fa-route', 
-          iconBg: 'bg-blue-500' 
-        },
-        { 
-          label: 'Traffic Reports', 
-          value: '12', 
-          icon: 'fas fa-exclamation-triangle', 
-          iconBg: 'bg-red-500' 
-        },
-        { 
-          label: 'Online Users', 
-          value: '1.2k', 
-          icon: 'fas fa-users', 
-          iconBg: 'bg-green-500' 
-        },
-        { 
-          label: 'Boda Available', 
-          value: '89', 
-          icon: 'fas fa-motorcycle', 
-          iconBg: 'bg-purple-500' 
-        }
-      ],
-     chatMessages: [],
-      recentUpdates: [
-        {
-          road: 'Thika Road',
-          time: '15 mins ago',
-          status: 'Heavy traffic near Garden City Mall',
-          statusColor: 'bg-red-500'
-        },
-        {
-          road: 'Mombasa Road',
-          time: '25 mins ago',
-          status: 'Accident cleared, traffic normalizing',
-          statusColor: 'bg-yellow-500'
-        },
-        {
-          road: 'Waiyaki Way',
-          time: '40 mins ago',
-          status: 'Clear traffic all through to Westlands',
-          statusColor: 'bg-green-500'
-        },
-        {
-          road: 'Ngong Road',
-          time: '55 mins ago',
-          status: 'Minor congestion at Prestige Plaza',
-          statusColor: 'bg-yellow-500'
-        }
-      ],
-      quickActions: [
-        { name: 'Report Traffic', icon: 'fas fa-exclamation-circle', color: '#ef4444' },
-        { name: 'Find Route', icon: 'fas fa-search-location', color: '#3b82f6' },
-        { name: 'Book Boda', icon: 'fas fa-motorcycle', color: '#10b981' },
-        { name: 'Emergency', icon: 'fas fa-phone', color: '#f59e0b' }
-      ],
-      newMessage: '',
-      currentUser: null
-    }
+  { 
+    label: 'Traffic Reports', 
+    value: '12', 
+    icon: 'fas fa-exclamation-triangle', 
+    iconBg: 'bg-red-500' 
   },
-  mounted() {
-    this.loadCurrentUser();
-    this.fetchMessages();
+  { 
+    label: 'Online Users', 
+    value: '1.2k', 
+    icon: 'fas fa-users', 
+    iconBg: 'bg-green-500' 
   },
-  methods: {
-    loadCurrentUser() {
-      const userData = JSON.parse(localStorage.getItem('user'));
-      this.currentUser = userData?.username || 'You';
-    },
-    async fetchMessages() {
-      try {
-        const res = await api.get('/messages/');
-        this.chatMessages = res.data.map(msg => {
-          const isCurrentUser = msg.sender === this.currentUser;
-          return {
-            name: msg.sender,
-            username: isCurrentUser ? 'You' : msg.sender,
-            message: msg.content,
-            time: new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            avatar: isCurrentUser 
-              ? this.currentUser.charAt(0).toUpperCase() 
-              : msg.sender.charAt(0).toUpperCase(),
-            isCurrentUser
-          };
-        });
-      } catch (err) {
-        console.error('Failed to load messages:', err);
-      }
-    },
-    async sendMessage() {
-      if (this.newMessage.trim()) {
-        try {
-          await api.post('/messages/', {
-            sender: this.currentUser,
-            content: this.newMessage
-          });
-          this.newMessage = '';
-          this.fetchMessages();
-        } catch (err) {
-          console.error('Failed to send message:', err);
-        }
-      }
-    },
-    getAvatarColor(name) {
-      const colors = [
-        'bg-blue-500', 'bg-green-500', 'bg-purple-500', 
-        'bg-red-500', 'bg-yellow-500', 'bg-indigo-500'
-      ];
-      const index = name.charCodeAt(0) % colors.length;
-      return colors[index];
+  { 
+    label: 'Boda Available', 
+    value: '89', 
+    icon: 'fas fa-motorcycle', 
+    iconBg: 'bg-purple-500' 
+  }
+]);
+
+const chatMessages = ref([]);
+const recentUpdates = ref([
+  {
+    road: 'Thika Road',
+    time: '15 mins ago',
+    status: 'Heavy traffic near Garden City Mall',
+    statusColor: 'bg-red-500'
+  },
+  {
+    road: 'Mombasa Road',
+    time: '25 mins ago',
+    status: 'Accident cleared, traffic normalizing',
+    statusColor: 'bg-yellow-500'
+  },
+  {
+    road: 'Waiyaki Way',
+    time: '40 mins ago',
+    status: 'Clear traffic all through to Westlands',
+    statusColor: 'bg-green-500'
+  },
+  {
+    road: 'Ngong Road',
+    time: '55 mins ago',
+    status: 'Minor congestion at Prestige Plaza',
+    statusColor: 'bg-yellow-500'
+  }
+]);
+
+const quickActions = ref([
+  { 
+    name: 'Report Traffic', 
+    icon: 'fas fa-exclamation-circle', 
+    color: '#ef4444',
+    handler: () => openReportModal()
+  },
+  { 
+    name: 'Find Route', 
+    icon: 'fas fa-search-location', 
+    color: '#3b82f6',
+    route: '/popular-routes'
+  },
+  { 
+    name: 'Book Boda', 
+    icon: 'fas fa-motorcycle', 
+    color: '#10b981',
+    route: '/boda'
+  },
+  { 
+    name: 'Emergency', 
+    icon: 'fas fa-phone', 
+    color: '#f59e0b',
+    handler: () => callEmergency()
+  }
+]);
+
+const newMessage = ref('');
+const currentUser = ref(null);
+
+// Methods
+const handleQuickAction = (action) => {
+  if (action.route) {
+    router.push(action.route);
+  } else if (action.handler) {
+    action.handler();
+  }
+};
+
+const openReportModal = () => {
+  console.log('Opening report modal');
+  // Implement your modal logic here
+};
+
+const callEmergency = () => {
+  console.log('Calling emergency');
+  // For actual phone call: window.location.href = 'tel:+254711123456';
+};
+
+const loadCurrentUser = () => {
+  const userData = JSON.parse(localStorage.getItem('user'));
+  currentUser.value = userData?.username || 'You';
+};
+
+const fetchMessages = async () => {
+  try {
+    const res = await api.get('/messages/');
+    chatMessages.value = res.data.map(msg => {
+      const isCurrentUser = msg.sender === currentUser.value;
+      return {
+        name: msg.sender,
+        username: isCurrentUser ? 'You' : msg.sender,
+        message: msg.content,
+        time: new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        avatar: isCurrentUser 
+          ? currentUser.value.charAt(0).toUpperCase() 
+          : msg.sender.charAt(0).toUpperCase(),
+        isCurrentUser
+      };
+    });
+  } catch (err) {
+    console.error('Failed to load messages:', err);
+  }
+};
+
+const sendMessage = async () => {
+  if (newMessage.value.trim()) {
+    try {
+      await api.post('/messages/', {
+        sender: currentUser.value,
+        content: newMessage.value
+      });
+      newMessage.value = '';
+      fetchMessages();
+    } catch (err) {
+      console.error('Failed to send message:', err);
     }
   }
-}
+};
+
+const getAvatarColor = (name) => {
+  const colors = [
+    'bg-blue-500', 'bg-green-500', 'bg-purple-500', 
+    'bg-red-500', 'bg-yellow-500', 'bg-indigo-500'
+  ];
+  const index = name.charCodeAt(0) % colors.length;
+  return colors[index];
+};
+
+// Lifecycle hooks
+onMounted(() => {
+  loadCurrentUser();
+  fetchMessages();
+});
 </script>
 
 <style scoped>

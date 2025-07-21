@@ -264,6 +264,9 @@ export default {
 <style scoped>
 /* Your existing styles remain unchanged */
 /* Custom scrollbar */
+.min-h-screen {
+  min-height: 100vh;
+}
 .custom-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: #475569 #334155;
