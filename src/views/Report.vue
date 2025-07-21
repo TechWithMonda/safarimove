@@ -133,6 +133,7 @@
             <div class="flex items-center justify-between mb-1">
               <h3 class="font-medium text-white">{{ location || 'Location' }}</h3>
               <span class="text-gray-400 text-xs">{{ getTimeLabel(time) || 'Just now' }}</span>
+
             </div>
             <p class="text-gray-300 text-sm">{{ message || 'Traffic status update' }}</p>
           </div>
@@ -142,14 +143,26 @@
   </div>
 </template>
 
+
+
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useTrafficStore } from '@/stores/traffic'
+import axios from 'axios'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+const trafficStore = useTrafficStore()
+
+// Get token from localStorage
+const accessToken = ref(localStorage.getItem('accessToken') || '')
+const isAuthenticated = ref(!!accessToken.value)
 
 // Form data
-const location = ref('Thika Road Garden City')
-const message = ref('Heavy traffic')
-const time = ref('15min')
-const severity = ref('high')
+const location = ref('')
+const message = ref('')
+const time = ref('now')
+const severity = ref('medium')
 const isSubmitting = ref(false)
 const showPreview = ref(true)
 
@@ -162,13 +175,24 @@ const timeOptions = ref([
   { value: '1hr', label: '1 hour ago' }
 ])
 
-// Get display label for time value
+// Helper functions
 const getTimeLabel = (value) => {
   const option = timeOptions.value.find(opt => opt.value === value)
   return option ? option.label : ''
 }
 
-// Get severity color
+const formatTime = (isoString) => {
+  const now = new Date()
+  const reportTime = new Date(isoString)
+  const diffMinutes = Math.floor((now - reportTime) / (1000 * 60))
+  
+  if (diffMinutes < 1) return 'Just now'
+  if (diffMinutes < 60) return `${diffMinutes} min ago`
+  if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)} hours ago`
+  return `${Math.floor(diffMinutes / 1440)} days ago`
+}
+
+// THIS IS THE MISSING FUNCTION THAT CAUSED THE ERROR
 const getSeverityColor = () => {
   return {
     low: 'bg-green-500',
@@ -177,7 +201,6 @@ const getSeverityColor = () => {
   }[severity.value]
 }
 
-// Ensure message doesn't exceed 40 chars
 const updateMessage = (event) => {
   const target = event.target
   if (target.value.length > 40) {
@@ -185,27 +208,101 @@ const updateMessage = (event) => {
   }
 }
 
-// Form submission
-const submitReport = () => {
-  isSubmitting.value = true
-  
-  const report = {
-    location: location.value,
-    message: message.value,
-    time: getTimeLabel(time.value),
-    severity: severity.value,
-    timestamp: new Date().toISOString()
+const verifyToken = async () => {
+  if (!accessToken.value) return false
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/verify/', {
+      headers: { 'Authorization': `Bearer ${accessToken.value}` }
+    })
+    return response.status === 200
+  } catch (error) {
+    console.error('Token verification failed:', error)
+    localStorage.removeItem('accessToken')
+    accessToken.value = ''
+    return false
+  }
+}
+
+const submitReport = async () => {
+  if (!(await verifyToken())) {
+    alert('Session expired. Please login again.')
+    router.push('/login')
+    return
   }
 
-  // Simulate API call
-  setTimeout(() => {
-    console.log('Report submitted:', report)
-    isSubmitting.value = false
-    alert(`Report submitted!\nLocation: ${report.location}\nStatus: ${report.message}\nSeverity: ${report.severity}`)
-  }, 1000)
-}
-</script>
+  isSubmitting.value = true
+  
+  try {
+    const report = {
+      location: location.value,
+      message: message.value,
+      severity: severity.value
+    }
 
+    await axios.post('http://127.0.0.1:8000/api/report/', report, {
+      headers: {
+        'Authorization': `Bearer ${accessToken.value}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    trafficStore.addUpdate({
+      road: report.location,
+      status: report.message,
+      time: 'Just now',
+      statusColor: getSeverityColor() // Using the function here
+    })
+
+    resetForm()
+    alert('Report submitted successfully!')
+  } catch (error) {
+    console.error('Error:', error.response?.data || error.message)
+    if (error.response?.status === 401) {
+      alert('Session expired. Please login again.')
+      router.push('/login')
+    } else {
+      alert(error.response?.data?.message || 'Submission failed')
+    }
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
+const fetchRecentUpdates = async () => {
+  try {
+    const response = await axios.get('http://127.0.0.1:8000/api/reports/recent/', {
+      headers: { 'Authorization': `Bearer ${accessToken.value}` }
+    })
+    
+    trafficStore.setUpdates(response.data.map(report => ({
+      road: report.location,
+      status: report.message,
+      time: formatTime(report.created_at),
+      statusColor: getSeverityColor() // Using the function here
+    })))
+  } catch (error) {
+    if (error.response?.status === 401) {
+      alert('Session expired. Please login again.')
+      router.push('/login')
+    } else {
+      console.error('Failed to fetch updates:', error)
+    }
+  }
+}
+
+const resetForm = () => {
+  location.value = ''
+  message.value = ''
+  time.value = 'now'
+  severity.value = 'medium'
+}
+
+onMounted(async () => {
+  if (accessToken.value && await verifyToken()) {
+    await fetchRecentUpdates()
+  }
+})
+</script>
 <style scoped>
 /* Custom select styling */
 select {

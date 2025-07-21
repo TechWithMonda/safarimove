@@ -81,6 +81,10 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '@/api';
 import LiveChatFeed from '../components/LiveChatFeed.vue';
+import { useTrafficStore } from '@/stores/traffic'
+
+const trafficStore = useTrafficStore()
+const recentUpdates = trafficStore.recentUpdates;
 
 const router = useRouter();
 
@@ -113,32 +117,7 @@ const stats = ref([
 ]);
 
 const chatMessages = ref([]);
-const recentUpdates = ref([
-  {
-    road: 'Thika Road',
-    time: '15 mins ago',
-    status: 'Heavy traffic near Garden City Mall',
-    statusColor: 'bg-red-500'
-  },
-  {
-    road: 'Mombasa Road',
-    time: '25 mins ago',
-    status: 'Accident cleared, traffic normalizing',
-    statusColor: 'bg-yellow-500'
-  },
-  {
-    road: 'Waiyaki Way',
-    time: '40 mins ago',
-    status: 'Clear traffic all through to Westlands',
-    statusColor: 'bg-green-500'
-  },
-  {
-    road: 'Ngong Road',
-    time: '55 mins ago',
-    status: 'Minor congestion at Prestige Plaza',
-    statusColor: 'bg-yellow-500'
-  }
-]);
+// const recentUpdates = ref([]);
 
 const quickActions = ref([
   { 
