@@ -1,0 +1,235 @@
+<template>
+  <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg p-6">
+    <h2 class="text-lg font-semibold text-white mb-6 flex items-center">
+      <i class="fas fa-exclamation-circle mr-2 text-red-400"></i>
+      Traffic Report
+    </h2>
+    
+    <form @submit.prevent="submitReport" class="space-y-5">
+      <!-- Location Field -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+          <i class="fas fa-map-marker-alt mr-2 text-blue-400"></i>
+          Location*
+        </label>
+        <div class="relative">
+          <input 
+            v-model="location" 
+            type="text" 
+            required
+            placeholder="e.g. Thika Road Garden City"
+            class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            maxlength="40"
+          >
+          <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <i class="fas fa-location-dot text-slate-500"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message Field -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+          <i class="fas fa-comment-dots mr-2 text-blue-400"></i>
+          Alert* (max 40 chars)
+        </label>
+        <div class="relative">
+          <textarea 
+            v-model="message" 
+            rows="3"
+            required
+            placeholder="e.g. Heavy traffic due to accident"
+            class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            maxlength="40"
+            @input="updateMessage"
+          ></textarea>
+          <div class="absolute bottom-2 right-2 bg-slate-800 px-2 rounded">
+            <span class="text-xs text-gray-400">{{ message.length }}/40</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Time Field -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+          <i class="fas fa-clock mr-2 text-blue-400"></i>
+          When*
+        </label>
+        <div class="relative">
+          <select 
+            v-model="time" 
+            required
+            class="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+          >
+            <option v-for="option in timeOptions" :key="option.value" :value="option.value">
+              {{ option.label }}
+            </option>
+          </select>
+          <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+            <i class="fas fa-chevron-down text-slate-500"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Severity -->
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+          <i class="fas fa-signal mr-2 text-blue-400"></i>
+          Severity
+        </label>
+        <div class="grid grid-cols-3 gap-3">
+          <button 
+            type="button"
+            @click="severity = 'low'"
+            class="py-2 px-3 rounded-lg border flex items-center justify-center transition-colors"
+            :class="severity === 'low' ? 'border-green-500 bg-green-900/30' : 'border-slate-600 hover:bg-slate-700'"
+          >
+            <i class="fas fa-car mr-2" :class="severity === 'low' ? 'text-green-400' : 'text-gray-400'"></i>
+            <span :class="severity === 'low' ? 'text-green-400' : 'text-gray-300'">Low</span>
+          </button>
+          <button 
+            type="button"
+            @click="severity = 'medium'"
+            class="py-2 px-3 rounded-lg border flex items-center justify-center transition-colors"
+            :class="severity === 'medium' ? 'border-yellow-500 bg-yellow-900/30' : 'border-slate-600 hover:bg-slate-700'"
+          >
+            <i class="fas fa-exclamation mr-2" :class="severity === 'medium' ? 'text-yellow-400' : 'text-gray-400'"></i>
+            <span :class="severity === 'medium' ? 'text-yellow-400' : 'text-gray-300'">Medium</span>
+          </button>
+          <button 
+            type="button"
+            @click="severity = 'high'"
+            class="py-2 px-3 rounded-lg border flex items-center justify-center transition-colors"
+            :class="severity === 'high' ? 'border-red-500 bg-red-900/30' : 'border-slate-600 hover:bg-slate-700'"
+          >
+            <i class="fas fa-triangle-exclamation mr-2" :class="severity === 'high' ? 'text-red-400' : 'text-gray-400'"></i>
+            <span :class="severity === 'high' ? 'text-red-400' : 'text-gray-300'">High</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <button 
+        type="submit" 
+        class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center mt-4"
+        :disabled="isSubmitting"
+      >
+        <i v-if="!isSubmitting" class="fas fa-paper-plane mr-2"></i>
+        <i v-else class="fas fa-circle-notch fa-spin mr-2"></i>
+        {{ isSubmitting ? 'Submitting...' : 'Submit Report' }}
+      </button>
+    </form>
+
+    <!-- Preview -->
+    <div v-if="showPreview" class="mt-6 p-4 bg-slate-700/50 rounded-lg border border-slate-600">
+      <h3 class="font-medium text-gray-300 flex items-center mb-2">
+        <i class="fas fa-eye mr-2"></i>
+        Preview
+      </h3>
+      <div class="bg-slate-800 p-3 rounded-md border border-slate-600">
+        <div class="flex items-start space-x-3">
+          <div :class="`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${getSeverityColor()}`"></div>
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-medium text-white">{{ location || 'Location' }}</h3>
+              <span class="text-gray-400 text-xs">{{ getTimeLabel(time) || 'Just now' }}</span>
+            </div>
+            <p class="text-gray-300 text-sm">{{ message || 'Traffic status update' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+
+// Form data
+const location = ref('Thika Road Garden City')
+const message = ref('Heavy traffic')
+const time = ref('15min')
+const severity = ref('high')
+const isSubmitting = ref(false)
+const showPreview = ref(true)
+
+// Time options
+const timeOptions = ref([
+  { value: 'now', label: 'Now' },
+  { value: '5min', label: '5 min ago' },
+  { value: '15min', label: '15 min ago' },
+  { value: '30min', label: '30 min ago' },
+  { value: '1hr', label: '1 hour ago' }
+])
+
+// Get display label for time value
+const getTimeLabel = (value) => {
+  const option = timeOptions.value.find(opt => opt.value === value)
+  return option ? option.label : ''
+}
+
+// Get severity color
+const getSeverityColor = () => {
+  return {
+    low: 'bg-green-500',
+    medium: 'bg-yellow-500',
+    high: 'bg-red-500'
+  }[severity.value]
+}
+
+// Ensure message doesn't exceed 40 chars
+const updateMessage = (event) => {
+  const target = event.target
+  if (target.value.length > 40) {
+    message.value = target.value.slice(0, 40)
+  }
+}
+
+// Form submission
+const submitReport = () => {
+  isSubmitting.value = true
+  
+  const report = {
+    location: location.value,
+    message: message.value,
+    time: getTimeLabel(time.value),
+    severity: severity.value,
+    timestamp: new Date().toISOString()
+  }
+
+  // Simulate API call
+  setTimeout(() => {
+    console.log('Report submitted:', report)
+    isSubmitting.value = false
+    alert(`Report submitted!\nLocation: ${report.location}\nStatus: ${report.message}\nSeverity: ${report.severity}`)
+  }, 1000)
+}
+</script>
+
+<style scoped>
+/* Custom select styling */
+select {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%234b5563' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* Loading spinner */
+.fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Smooth transitions */
+input, textarea, select, button {
+  transition: all 0.2s ease;
+}
+</style>

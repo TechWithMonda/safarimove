@@ -145,7 +145,7 @@ const quickActions = ref([
     name: 'Report Traffic', 
     icon: 'fas fa-exclamation-circle', 
     color: '#ef4444',
-    handler: () => openReportModal()
+    route: '/report'
   },
   { 
     name: 'Find Route', 

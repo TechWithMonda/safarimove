@@ -8,6 +8,7 @@ import Notifications from '../views/Notifications.vue'
 import HelpSupport from '../views/HelpSupport.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
+import Report from '@/views/Report.vue'
 
 const routes = [
   {
@@ -41,6 +42,12 @@ const routes = [
     path: '/traffic',
     name: 'Traffic',
     component: Traffic,
+  
+  },
+   {
+    path: '/report',
+    name: 'Report',
+    component: Report,
   
   },
   {
