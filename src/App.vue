@@ -110,6 +110,33 @@
                 {{ item.name }}
               </router-link>
             </nav>
+            
+          </div>
+<div class="flex-shrink-0 p-4 border-t border-slate-700 animate-fade-in-up">
+            <div class="flex items-center">
+              <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-105 transition-transform">
+                <span class="text-sm font-medium text-white">
+                  {{ username.charAt(0).toUpperCase() }}
+                </span>
+              </div>
+              <div class="ml-3 flex-1 min-w-0">
+                <p class="text-sm font-medium text-white truncate">{{ username }}</p>
+                <p class="text-xs text-gray-400 truncate">Online</p>
+              </div>
+              <div class="flex space-x-2">
+                <button 
+                  @click="handleLogout" 
+                  class="text-gray-400 hover:text-white transition-all duration-500"
+                  :disabled="isLoggingOut"
+                >
+                  <i v-if="!isLoggingOut" class="fas fa-sign-out-alt"></i>
+                  <i v-else class="fas fa-spinner fa-spin"></i>
+                </button>
+                <button class="text-gray-400 hover:text-white hover:rotate-180 transition-all duration-500">
+                  <i class="fas fa-cog"></i>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -130,28 +157,34 @@
             </button>
 
             <!-- Animated Search Bar -->
-            <div class="flex-1 max-w-2xl mx-auto lg:mx-0 lg:ml-8">
-              <div class="relative">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <i class="fas fa-search text-gray-400 transition-colors duration-300" :class="{'text-blue-400': isSearchFocused}"></i>
-                </div>
-                <input 
-                  v-model="searchQuery"
-                  @focus="isSearchFocused = true"
-                  @blur="isSearchFocused = false"
-                  type="text" 
-                  placeholder="Search routes, traffic updates, or locations..."
-                  class="block w-full pl-10 pr-3 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-slate-500"
-                >
-                <div 
-                  v-if="searchQuery"
-                  @click="searchQuery = ''"
-                  class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer hover:text-blue-400 transition-colors"
-                >
-                  <i class="fas fa-times"></i>
-                </div>
-              </div>
-            </div>
+         <div class="w-full max-w-xs sm:max-w-md lg:max-w-2xl mx-4 sm:mx-auto lg:mx-0 lg:ml-8 flex-1">
+  <div class="relative">
+    <!-- Search Icon -->
+    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      <i class="fas fa-search text-gray-400 transition-colors duration-300" :class="{'text-blue-400': isSearchFocused}"></i>
+    </div>
+
+    <!-- Input Field -->
+    <input 
+      v-model="searchQuery"
+      @focus="isSearchFocused = true"
+      @blur="isSearchFocused = false"
+      type="text" 
+      placeholder="Search routes, traffic updates, or locations..."
+      class="block w-full pl-10 pr-10 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-slate-500"
+    >
+
+    <!-- Clear Button -->
+    <div 
+      v-if="searchQuery"
+      @click="searchQuery = ''"
+      class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer hover:text-blue-400 transition-colors"
+    >
+      <i class="fas fa-times"></i>
+    </div>
+  </div>
+</div>
+
 
             <!-- Header Actions -->
             <div class="flex items-center space-x-4">
