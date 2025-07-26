@@ -9,6 +9,7 @@ import HelpSupport from '../views/HelpSupport.vue'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Report from '@/views/Report.vue'
+import DeleteAccount from '@/views/DeleteAccount.vue'
 
 const routes = [
   {
@@ -79,6 +80,12 @@ const routes = [
     path: '/privacy-policy',
     name: '/privacypolicy',
     component: HelpSupport,
+   
+  },
+  {
+    path: '/settings',
+    name: 'DeleteAccount',
+    component: DeleteAccount,
    
   }
 ]
