@@ -76,8 +76,8 @@ const routes = [
     // meta: { requiresAuth: true }
   },
   {
-    path: '/support',
-    name: 'HelpSupport',
+    path: '/privacy-policy',
+    name: '/privacypolicy',
     component: HelpSupport,
    
   }

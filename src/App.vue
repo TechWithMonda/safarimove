@@ -287,7 +287,7 @@ export default {
         { name: 'Boda Directory', icon: 'fas fa-motorcycle', path: '/boda' },
         { name: 'Route Planner', icon: 'fas fa-route', path: '/planner' },
         { name: 'Notifications', icon: 'fas fa-bell', path: '/notifications' },
-        { name: 'Help & Support', icon: 'fas fa-life-ring', path: '/support' }
+        { name: 'Policy', icon: 'fas fa-balance-scale', path: '/privacy-policy' }
       ]
     }
   }
