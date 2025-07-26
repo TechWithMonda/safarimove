@@ -85,7 +85,8 @@ export default {
       reconnectAttempts: 0,
       maxReconnectAttempts: 5,
       apiBaseUrl: 'https://safarimovebackend-production.up.railway.app/api',
-      reconnectDelay: 1000, // Initial reconnect delay
+      reconnectDelay: 1000,
+      isSocketConnected: false
     }
   },
   mounted() {
@@ -103,10 +104,11 @@ export default {
   methods: {
     cleanupWebSocket() {
       if (this.socket) {
-        this.socket.onclose = null; // Prevent automatic reconnection
+        this.socket.onclose = null;
         this.socket.close();
         this.socket = null;
       }
+      this.isSocketConnected = false;
     },
 
     setupMessageChecker() {
@@ -117,24 +119,35 @@ export default {
     
     checkExpiredMessages() {
       this.chatMessages = this.chatMessages.filter(msg => {
-        if (msg.is_disappearing) {
-          const sentAt = new Date(msg.sent_at);
-          const expiryTime = new Date(sentAt.getTime() + 24 * 60 * 60 * 1000);
-          return new Date() < expiryTime;
+        if (msg.is_disappearing && msg.sent_at) {
+          try {
+            const sentAt = new Date(msg.sent_at);
+            if (isNaN(sentAt.getTime())) return true; // Invalid date, keep message
+            const expiryTime = new Date(sentAt.getTime() + 24 * 60 * 60 * 1000);
+            return new Date() < expiryTime;
+          } catch (e) {
+            console.error('Error checking message expiry:', e);
+            return true;
+          }
         }
         return true;
       });
     },
     
     loadCurrentUser() {
-      const userData = JSON.parse(localStorage.getItem('user'));
-      this.currentUser = userData?.username || 'Anonymous';
+      try {
+        const userData = JSON.parse(localStorage.getItem('user'));
+        this.currentUser = userData?.username || 'Anonymous';
+      } catch (e) {
+        console.error('Error loading user:', e);
+        this.currentUser = 'Anonymous';
+      }
     },
     
     async fetchMessages() {
       try {
         const response = await fetch(`${this.apiBaseUrl}/messages/`);
-        if (!response.ok) throw new Error('Failed to fetch messages');
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         
         this.chatMessages = data
@@ -147,13 +160,26 @@ export default {
     
     formatMessage(msg) {
       const isCurrentUser = msg.sender === this.currentUser;
+      let displayTime = 'Just now';
+      
+      try {
+        if (msg.sent_at) {
+          displayTime = new Date(msg.sent_at).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          });
+        }
+      } catch (e) {
+        console.error('Error formatting message time:', e);
+      }
+      
       return {
-        id: msg.id,
+        id: msg.id || Date.now(), // Fallback ID if not provided
         name: msg.sender,
         username: isCurrentUser ? 'You' : msg.sender,
         message: msg.content,
-        time: new Date(msg.sent_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        avatar: msg.sender.charAt(0).toUpperCase(),
+        time: displayTime,
+        avatar: msg.sender?.charAt(0).toUpperCase() || '?',
         isCurrentUser,
         is_disappearing: msg.is_disappearing,
         sent_at: msg.sent_at
@@ -161,43 +187,49 @@ export default {
     },
     
     connectWebSocket() {
+      if (this.isSocketConnected) return;
+      
       const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
       const backendHost = 'safarimovebackend-production.up.railway.app';
       const roomName = 'lobby';
       const wsUrl = `${wsScheme}${backendHost}/ws/chat/${roomName}/`;
 
-      this.socket = new WebSocket(wsUrl);
-      
-      this.socket.onopen = () => {
-        console.log('WebSocket connected');
-        this.reconnectAttempts = 0;
-        this.reconnectDelay = 1000; // Reset delay after successful connection
-      };
-      
-      this.socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        if (data.message) {
-          const formattedMsg = this.formatMessage({
-            id: data.id,
-            sender: data.sender,
-            content: data.message,
-            sent_at: data.sent_at,
-            is_disappearing: data.is_disappearing
-          });
-          
-          // Check if message already exists
-          const messageExists = this.chatMessages.some(m => m.id === formattedMsg.id);
-          if (!messageExists) {
-            this.chatMessages = [...this.chatMessages, formattedMsg];
-          }
-        }
-      };
-      
-      this.socket.onclose = (event) => {
-        console.log('WebSocket disconnected:', event.code, event.reason);
+      try {
+        this.socket = new WebSocket(wsUrl);
+        this.isSocketConnected = true;
         
-        if (event.code !== 1000) { // Don't reconnect if closed normally
-          if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.socket.onopen = () => {
+          console.log('WebSocket connected');
+          this.reconnectAttempts = 0;
+          this.reconnectDelay = 1000;
+        };
+        
+        this.socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.message) {
+              const formattedMsg = this.formatMessage({
+                id: data.id,
+                sender: data.sender,
+                content: data.message,
+                sent_at: data.sent_at,
+                is_disappearing: data.is_disappearing
+              });
+              
+              if (!this.chatMessages.some(m => m.id === formattedMsg.id)) {
+                this.chatMessages = [...this.chatMessages, formattedMsg];
+              }
+            }
+          } catch (e) {
+            console.error('Error processing WebSocket message:', e);
+          }
+        };
+        
+        this.socket.onclose = (event) => {
+          this.isSocketConnected = false;
+          console.log('WebSocket disconnected:', event.code, event.reason);
+          
+          if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
             const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts), 30000);
             console.log(`Attempting to reconnect in ${delay}ms...`);
             
@@ -205,15 +237,17 @@ export default {
               this.reconnectAttempts++;
               this.connectWebSocket();
             }, delay);
-          } else {
-            console.log('Max reconnection attempts reached');
           }
-        }
-      };
-      
-      this.socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
+        };
+        
+        this.socket.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          this.isSocketConnected = false;
+        };
+      } catch (error) {
+        console.error('WebSocket initialization error:', error);
+        this.isSocketConnected = false;
+      }
     },
     
     async sendMessage() {
@@ -221,25 +255,33 @@ export default {
 
       const messageContent = this.newMessage;
       const isDisappearing = this.isDisappearing;
-      this.newMessage = '';
+      const tempId = Date.now(); // Define tempId here so it's available in error handler
+
+      // Optimistic UI update
+      const optimisticMsg = {
+        id: tempId,
+        name: this.currentUser,
+        username: 'You',
+        message: messageContent,
+        time: 'Just now',
+        avatar: this.currentUser.charAt(0).toUpperCase(),
+        isCurrentUser: true,
+        is_disappearing: isDisappearing,
+        sent_at: new Date().toISOString()
+      };
+      this.chatMessages = [...this.chatMessages, optimisticMsg];
 
       try {
-        // Optimistic UI update
-        const tempId = Date.now();
-        const optimisticMsg = {
-          id: tempId,
-          name: this.currentUser,
-          username: 'You',
-          message: messageContent,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          avatar: this.currentUser.charAt(0).toUpperCase(),
-          isCurrentUser: true,
-          is_disappearing: isDisappearing,
-          sent_at: new Date().toISOString()
-        };
-        this.chatMessages = [...this.chatMessages, optimisticMsg];
+        // Send to WebSocket if connected
+        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+          this.socket.send(JSON.stringify({
+            message: messageContent,
+            sender: this.currentUser,
+            is_disappearing: isDisappearing
+          }));
+        }
 
-        // Save to database via fetch
+        // Save to database
         const response = await fetch(`${this.apiBaseUrl}/messages/`, {
           method: 'POST',
           headers: {
@@ -252,27 +294,26 @@ export default {
           })
         });
 
-        if (!response.ok) throw new Error('Failed to send message');
-        
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         const persistedMessage = await response.json();
-        
-        // Replace temporary message with persisted message
-        this.chatMessages = this.chatMessages.map(msg => 
+
+        // Replace temporary message with saved version
+        this.chatMessages = this.chatMessages.map(msg =>
           msg.id === tempId ? this.formatMessage(persistedMessage) : msg
         );
 
-        // WebSocket should broadcast the message to other clients
-        // No need to manually send via WebSocket if backend handles it
-
+        this.newMessage = ''; // Clear input only after successful send
       } catch (err) {
         console.error('Failed to send message:', err);
-        // Remove optimistic message if failed
+        // Remove optimistic message on error
         this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
-        this.newMessage = messageContent;
+        // Don't clear newMessage so user can try again
       }
     },
     
     getAvatarColor(name) {
+      if (!name) return 'bg-gray-500';
       const colors = [
         'bg-blue-500', 'bg-green-500', 'bg-purple-500', 
         'bg-red-500', 'bg-yellow-500', 'bg-indigo-500'
@@ -283,6 +324,7 @@ export default {
   }
 }
 </script>
+
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
