@@ -135,98 +135,92 @@
   </div>
 </template>
 
-<script>
-import axios from 'axios';
 
-export default {
-  name: 'LoginForm',
-  data() {
-    return {
-      form: {
-        username: '',
-        password: ''
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const form = ref({
+  username: '',
+  password: ''
+})
+const showPassword = ref(false)
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+const rememberMe = ref(false)
+
+const togglePasswordVisibility = () => {
+  showPassword.value = !showPassword.value
+}
+
+const handleLogin = async () => {
+  // Validate inputs
+  if (!form.value.username || !form.value.password) {
+    errorMessage.value = 'Please enter both username and password'
+    return
+  }
+
+  isSubmitting.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await fetch('https://safarimovebackend-production.up.railway.app/api/login/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
-      showPassword: false,
-      isSubmitting: false,
-      errorMessage: '',
-      rememberMe: false
+      credentials: 'include', // For cookies if using them
+      body: JSON.stringify({
+        username: form.value.username,
+        password: form.value.password
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.detail || 'Login failed')
     }
-  },
-  methods: {
-    togglePasswordVisibility() {
-      this.showPassword = !this.showPassword
-    },
-    async handleLogin() {
-      // Validate inputs
-      if (!this.form.username || !this.form.password) {
-        this.errorMessage = 'Please enter both username and password';
-        return;
+
+    // Handle successful login
+    if (data.access || data.token) {
+      // Store tokens
+      const token = data.access || data.token
+      localStorage.setItem('accessToken', token)
+      
+      if (data.refresh) {
+        localStorage.setItem('refreshToken', data.refresh)
       }
 
-      this.isSubmitting = true;
-      this.errorMessage = '';
-
-      try {
-        const response = await axios.post(
-          'safarimovebackend-production.up.railway.app/api/login/', 
-          {
-            username: this.form.username,
-            password: this.form.password
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            withCredentials: true
-          }
-        );
-
-        // Handle successful login
-        if (response.data && (response.data.access || response.data.token)) {
-          // Store tokens
-          const token = response.data.access || response.data.token;
-          localStorage.setItem('accessToken', token);
-          
-          if (response.data.refresh) {
-            localStorage.setItem('refreshToken', response.data.refresh);
-          }
-
-          // Store user data
-          const userData = {
-            username: this.form.username,
-            first_name: response.data.user?.first_name || this.form.username,
-            email: response.data.user?.email || `${this.form.username}@example.com`
-          };
-          
-          localStorage.setItem('user', JSON.stringify(userData));
-          
-          // Force reload of user data in main app
-          window.dispatchEvent(new CustomEvent('user-login'));
-
-          // Redirect to dashboard
-          this.$router.push('/');
-        } else {
-          throw new Error('Authentication failed - no token received');
-        }
-      } catch (error) {
-        console.error('Login error:', error.response || error);
-        
-        if (error.response) {
-          this.errorMessage = error.response.data.detail || 
-                            error.response.data.non_field_errors?.join(', ') || 
-                            'Invalid credentials';
-        } else {
-          this.errorMessage = 'Network error. Please try again later.';
-        }
-        
-        this.form.password = '';
-      } finally {
-        this.isSubmitting = false;
+      // Store user data
+      const userData = {
+        username: form.value.username,
+        first_name: data.user?.first_name || form.value.username,
+        email: data.user?.email || `${form.value.username}@example.com`
       }
+      
+      localStorage.setItem('user', JSON.stringify(userData))
+      
+      // Force reload of user data in main app
+      window.dispatchEvent(new CustomEvent('user-login'))
+
+      // Redirect to dashboard
+      router.push('/')
+    } else {
+      throw new Error('Authentication failed - no token received')
     }
+  } catch (error) {
+    console.error('Login error:', error)
+    errorMessage.value = error.message || 'Invalid credentials'
+    form.value.password = ''
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
+
 
 <style>
 /* Minimal animations */
