@@ -14,6 +14,7 @@ const routes = [
   {
     path: '/',
     name: 'Dashboard',
+    hideLayout: true,
     component: Dashboard,
     // meta: { requiresAuth: true } // Protected route
   },
