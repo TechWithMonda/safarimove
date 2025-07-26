@@ -167,160 +167,175 @@
   </div>
 </template>
 
-<script>
-import axios from 'axios';
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-export default {
-  name: 'RegisterForm',
-  data() {
-    return {
-      form: {
-        email: '',
-        username: '',
-        password: '',
-        confirmPassword: ''
+const router = useRouter()
+
+const form = ref({
+  email: '',
+  username: '',
+  password: '',
+  confirmPassword: ''
+})
+
+const errors = ref({
+  email: '',
+  username: '',
+  password: '',
+  confirmPassword: ''
+})
+
+const showPassword = ref(false)
+const isSubmitting = ref(false)
+const errorMessage = ref('')
+const passwordStrength = ref(-1)
+
+const isFormValid = computed(() => {
+  return (
+    form.value.email &&
+    form.value.username &&
+    form.value.password &&
+    form.value.confirmPassword &&
+    !errors.value.email &&
+    !errors.value.username &&
+    !errors.value.password &&
+    !errors.value.confirmPassword
+  )
+})
+
+function togglePasswordVisibility() {
+  showPassword.value = !showPassword.value
+}
+
+function getStrengthText() {
+  const levels = ['Weak', 'Fair', 'Good', 'Strong']
+  return passwordStrength.value >= 0 ? levels[passwordStrength.value] : ''
+}
+
+function validateEmail() {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!form.value.email) {
+    errors.value.email = 'Email is required'
+  } else if (!emailRegex.test(form.value.email)) {
+    errors.value.email = 'Please enter a valid email address'
+  } else {
+    errors.value.email = ''
+  }
+}
+
+function validateUsername() {
+  if (!form.value.username) {
+    errors.value.username = 'Username is required'
+  } else if (form.value.username.length < 3) {
+    errors.value.username = 'Username must be at least 3 characters'
+  } else if (form.value.username.length > 20) {
+    errors.value.username = 'Username must be less than 20 characters'
+  } else if (!/^[a-zA-Z0-9_]+$/.test(form.value.username)) {
+    errors.value.username = 'Username can only contain letters, numbers, and underscores'
+  } else {
+    errors.value.username = ''
+  }
+}
+
+function validatePassword() {
+  let strength = -1
+  if (form.value.password.length > 0) strength = 0
+  if (form.value.password.length >= 8) strength = 1
+  if (/[A-Z]/.test(form.value.password) && /[a-z]/.test(form.value.password)) strength = 2
+  if (/\d/.test(form.value.password) && /[!@#$%^&*(),.?":{}|<>]/.test(form.value.password) && form.value.password.length >= 10) strength = 3
+  passwordStrength.value = strength
+
+  if (!form.value.password) {
+    errors.value.password = 'Password is required'
+  } else if (form.value.password.length < 8) {
+    errors.value.password = 'Password must be at least 8 characters'
+  } else {
+    errors.value.password = ''
+  }
+  validateConfirmPassword()
+}
+
+function validateConfirmPassword() {
+  if (!form.value.confirmPassword) {
+    errors.value.confirmPassword = 'Please confirm your password'
+  } else if (form.value.password !== form.value.confirmPassword) {
+    errors.value.confirmPassword = 'Passwords do not match'
+  } else {
+    errors.value.confirmPassword = ''
+  }
+}
+
+async function handleRegister() {
+  validateEmail()
+  validateUsername()
+  validatePassword()
+  validateConfirmPassword()
+
+  if (!isFormValid.value) {
+    errorMessage.value = 'Please fix the errors in the form'
+    return
+  }
+
+  isSubmitting.value = true
+  errorMessage.value = ''
+
+  try {
+    const response = await fetch('https://safarimovebackend-production.up.railway.app/api/register/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
       },
-      errors: {
-        email: '',
-        username: '',
-        password: '',
-        confirmPassword: ''
-      },
-      showPassword: false,
-      isSubmitting: false,
-      errorMessage: '',
-      passwordStrength: -1
+      body: JSON.stringify({
+        email: form.value.email,
+        username: form.value.username,
+        password: form.value.password,
+        password2: form.value.confirmPassword
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw data
     }
-  },
-  computed: {
-    isFormValid() {
-      return (
-        this.form.email &&
-        this.form.username &&
-        this.form.password &&
-        this.form.confirmPassword &&
-        !this.errors.email &&
-        !this.errors.username &&
-        !this.errors.password &&
-        !this.errors.confirmPassword
-      )
+
+    if (data.success || response.status === 201) {
+      // Store user data in localStorage only (no Vuex)
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user))
+      }
+      if (data.token) {
+        localStorage.setItem('accessToken', data.token)
+      }
+      router.push('/')
+    } else {
+      throw new Error('Registration failed')
     }
-  },
-  methods: {
-    togglePasswordVisibility() {
-      this.showPassword = !this.showPassword
-    },
-    getStrengthText() {
-      const levels = ['Weak', 'Fair', 'Good', 'Strong']
-      return this.passwordStrength >= 0 ? levels[this.passwordStrength] : ''
-    },
-    validateEmail() {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (!this.form.email) {
-        this.errors.email = 'Email is required'
-      } else if (!emailRegex.test(this.form.email)) {
-        this.errors.email = 'Please enter a valid email address'
-      } else {
-        this.errors.email = ''
-      }
-    },
-    validateUsername() {
-      if (!this.form.username) {
-        this.errors.username = 'Username is required'
-      } else if (this.form.username.length < 3) {
-        this.errors.username = 'Username must be at least 3 characters'
-      } else if (this.form.username.length > 20) {
-        this.errors.username = 'Username must be less than 20 characters'
-      } else if (!/^[a-zA-Z0-9_]+$/.test(this.form.username)) {
-        this.errors.username = 'Username can only contain letters, numbers, and underscores'
-      } else {
-        this.errors.username = ''
-      }
-    },
-    validatePassword() {
-      let strength = -1
-      if (this.form.password.length > 0) strength = 0
-      if (this.form.password.length >= 8) strength = 1
-      if (/[A-Z]/.test(this.form.password) && /[a-z]/.test(this.form.password)) strength = 2
-      if (/\d/.test(this.form.password) && /[!@#$%^&*(),.?":{}|<>]/.test(this.form.password) && this.form.password.length >= 10) strength = 3
-      this.passwordStrength = strength
-
-      if (!this.form.password) {
-        this.errors.password = 'Password is required'
-      } else if (this.form.password.length < 8) {
-        this.errors.password = 'Password must be at least 8 characters'
-      } else {
-        this.errors.password = ''
-      }
-      this.validateConfirmPassword()
-    },
-    validateConfirmPassword() {
-      if (!this.form.confirmPassword) {
-        this.errors.confirmPassword = 'Please confirm your password'
-      } else if (this.form.password !== this.form.confirmPassword) {
-        this.errors.confirmPassword = 'Passwords do not match'
-      } else {
-        this.errors.confirmPassword = ''
-      }
-    },
-    async handleRegister() {
-      this.validateEmail()
-      this.validateUsername()
-      this.validatePassword()
-      this.validateConfirmPassword()
-
-      if (!this.isFormValid) {
-        this.errorMessage = 'Please fix the errors in the form'
-        return
-      }
-
-      this.isSubmitting = true
-      this.errorMessage = ''
-
-      try {
-        const response = await axios.post('http://127.0.0.1:8000/api/register/', {
-          email: this.form.email,
-          username: this.form.username,
-          password: this.form.password,
-          password2: this.form.confirmPassword
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.data.success || response.status === 201) {
-          if (response.data.user) {
-            this.$store.commit('setUser', response.data.user);
-          }
-          if (response.data.token) {
-            localStorage.setItem('accessToken', response.data.token);
-          }
-          this.$router.push('/');
-        } else {
-          throw new Error('Registration failed');
-        }
-      } catch (error) {
-        if (error.response?.data) {
-          const data = error.response.data;
-          if (data.email) this.errors.email = Array.isArray(data.email) ? data.email[0] : data.email;
-          if (data.username) this.errors.username = Array.isArray(data.username) ? data.username[0] : data.username;
-          if (data.password) this.errors.password = Array.isArray(data.password) ? data.password[0] : data.password;
-          if (data.non_field_errors) this.errorMessage = Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors;
-          
-          if (!this.errorMessage) {
-            this.errorMessage = 'Please correct the errors in the form';
-          }
-        } else {
-          this.errorMessage = error.message || 'Registration failed. Please try again.';
-        }
-      } finally {
-        this.isSubmitting = false;
-      }
+  } catch (error) {
+    if (error.email) {
+      errors.value.email = Array.isArray(error.email) ? error.email[0] : error.email
     }
+    if (error.username) {
+      errors.value.username = Array.isArray(error.username) ? error.username[0] : error.username
+    }
+    if (error.password) {
+      errors.value.password = Array.isArray(error.password) ? error.password[0] : error.password
+    }
+    if (error.non_field_errors) {
+      errorMessage.value = Array.isArray(error.non_field_errors) ? error.non_field_errors[0] : error.non_field_errors
+    }
+    
+    if (!errorMessage.value) {
+      errorMessage.value = error.message || 'Registration failed. Please try again.'
+    }
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
+
 
 <style>
 /* Minimal animations */
