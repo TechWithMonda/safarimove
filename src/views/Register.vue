@@ -309,7 +309,7 @@ async function handleRegister() {
       if (data.token) {
         localStorage.setItem('accessToken', data.token)
       }
-      router.push('/')
+      router.push('/login')
     } else {
       throw new Error('Registration failed')
     }

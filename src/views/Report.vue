@@ -133,7 +133,6 @@
             <div class="flex items-center justify-between mb-1">
               <h3 class="font-medium text-white">{{ location || 'Location' }}</h3>
               <span class="text-gray-400 text-xs">{{ getTimeLabel(time) || 'Just now' }}</span>
-
             </div>
             <p class="text-gray-300 text-sm">{{ message || 'Traffic status update' }}</p>
           </div>
@@ -143,12 +142,9 @@
   </div>
 </template>
 
-
-
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useTrafficStore } from '@/stores/traffic'
-import axios from 'axios'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -192,7 +188,6 @@ const formatTime = (isoString) => {
   return `${Math.floor(diffMinutes / 1440)} days ago`
 }
 
-// THIS IS THE MISSING FUNCTION THAT CAUSED THE ERROR
 const getSeverityColor = () => {
   return {
     low: 'bg-green-500',
@@ -210,11 +205,21 @@ const updateMessage = (event) => {
 
 const verifyToken = async () => {
   if (!accessToken.value) return false
+  
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/verify/', {
-      headers: { 'Authorization': `Bearer ${accessToken.value}` }
+    const response = await fetch('https://safarimovebackend-production.up.railway.app/api/verify/', {
+      method: 'GET',
+      headers: { 
+        'Authorization': `Bearer ${accessToken.value}`,
+        'Content-Type': 'application/json'
+      }
     })
-    return response.status === 200
+    
+    if (!response.ok) {
+      throw new Error('Token verification failed')
+    }
+    
+    return true
   } catch (error) {
     console.error('Token verification failed:', error)
     localStorage.removeItem('accessToken')
@@ -239,29 +244,38 @@ const submitReport = async () => {
       severity: severity.value
     }
 
-    await axios.post('http://127.0.0.1:8000/api/report/', report, {
+    const response = await fetch('https://safarimovebackend-production.up.railway.app/api/report/', {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${accessToken.value}`,
         'Content-Type': 'application/json'
-      }
+      },
+      body: JSON.stringify(report)
     })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.message || 'Submission failed')
+    }
+
+    const responseData = await response.json()
 
     trafficStore.addUpdate({
       road: report.location,
       status: report.message,
       time: 'Just now',
-      statusColor: getSeverityColor() // Using the function here
+      statusColor: getSeverityColor()
     })
 
     resetForm()
     alert('Report submitted successfully!')
   } catch (error) {
-    console.error('Error:', error.response?.data || error.message)
-    if (error.response?.status === 401) {
+    console.error('Error:', error.message)
+    if (error.message.includes('401')) {
       alert('Session expired. Please login again.')
       router.push('/login')
     } else {
-      alert(error.response?.data?.message || 'Submission failed')
+      alert(error.message || 'Submission failed')
     }
   } finally {
     isSubmitting.value = false
@@ -270,22 +284,30 @@ const submitReport = async () => {
 
 const fetchRecentUpdates = async () => {
   try {
-    const response = await axios.get('http://127.0.0.1:8000/api/reports/recent/', {
-      headers: { 'Authorization': `Bearer ${accessToken.value}` }
+    const response = await fetch('https://safarimovebackend-production.up.railway.app/api/reports/recent/', {
+      headers: { 
+        'Authorization': `Bearer ${accessToken.value}`,
+        'Content-Type': 'application/json'
+      }
     })
     
-    trafficStore.setUpdates(response.data.map(report => ({
+    if (!response.ok) {
+      throw new Error('Failed to fetch updates')
+    }
+
+    const data = await response.json()
+    
+    trafficStore.setUpdates(data.map(report => ({
       road: report.location,
       status: report.message,
       time: formatTime(report.created_at),
-      statusColor: getSeverityColor() // Using the function here
+      statusColor: getSeverityColor()
     })))
   } catch (error) {
-    if (error.response?.status === 401) {
+    console.error('Failed to fetch updates:', error)
+    if (error.message.includes('401')) {
       alert('Session expired. Please login again.')
       router.push('/login')
-    } else {
-      console.error('Failed to fetch updates:', error)
     }
   }
 }
@@ -303,6 +325,7 @@ onMounted(async () => {
   }
 })
 </script>
+
 <style scoped>
 /* Custom select styling */
 select {
