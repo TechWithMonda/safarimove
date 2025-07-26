@@ -1,29 +1,29 @@
 <template>
-  <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg">
-    <div class="px-6 py-4 border-b border-slate-700">
-      <h2 class="text-lg font-semibold text-white flex items-center">
+  <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-lg h-full flex flex-col">
+    <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-700">
+      <h2 class="text-base sm:text-lg font-semibold text-white flex items-center">
         <i class="fas fa-comments mr-2 text-blue-400"></i>
         Live Chat Feed
       </h2>
     </div>
     
-    <div class="p-6 max-h-96 overflow-y-auto custom-scrollbar">
+    <div class="p-4 sm:p-6 flex-1 overflow-y-auto custom-scrollbar">
       <div 
         v-for="(msg, index) in chatMessages" 
         :key="index"
-        class="flex items-start space-x-3 mb-4"
+        class="flex items-start space-x-2 sm:space-x-3 mb-3 sm:mb-4"
       >
         <div 
           :class="[
             getAvatarColor(msg.name),
             msg.isCurrentUser ? 'ring-2 ring-blue-400' : ''
           ]" 
-          class="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
+          class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0"
         >
           <span class="text-white font-medium text-xs">{{ msg.avatar }}</span>
         </div>
         <div class="flex-1 min-w-0">
-          <div class="flex items-center space-x-2 mb-1">
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-0 mb-1">
             <span class="font-medium text-white text-sm">{{ msg.username }}</span>
             <span class="text-gray-400 text-xs">{{ msg.time }}</span>
             <span v-if="msg.is_disappearing" class="text-xs text-yellow-400">
@@ -31,7 +31,7 @@
             </span>
           </div>
           <p 
-            class="text-gray-300 text-sm rounded-lg p-3"
+            class="text-gray-300 text-sm rounded-lg p-2 sm:p-3"
             :class="msg.isCurrentUser ? 'bg-blue-600/20' : 'bg-slate-700'"
           >
             {{ msg.message }}
@@ -40,7 +40,7 @@
       </div>
     </div>
 
-    <div class="px-6 py-4 border-t border-slate-700">
+    <div class="px-4 sm:px-6 py-3 sm:py-4 border-t border-slate-700">
       <div class="flex items-center mb-2">
         <input 
           type="checkbox" 
@@ -48,23 +48,23 @@
           v-model="isDisappearing"
           class="mr-2 rounded text-blue-600 focus:ring-blue-500"
         >
-        <label for="disappearing" class="text-sm text-gray-300">
+        <label for="disappearing" class="text-xs sm:text-sm text-gray-300">
           Disappearing message (24h)
         </label>
       </div>
-      <div class="flex space-x-3">
+      <div class="flex space-x-2 sm:space-x-3">
         <input 
           v-model="newMessage"
           @keyup.enter="sendMessage"
           type="text" 
           placeholder="Share traffic updates..."
-          class="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          class="flex-1 px-3 py-1 sm:py-2 text-sm sm:text-base bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
         <button 
           @click="sendMessage"
-          class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          class="bg-blue-600 text-white px-3 sm:px-4 py-1 sm:py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
         >
-          <i class="fas fa-paper-plane"></i>
+          <i class="fas fa-paper-plane text-sm sm:text-base"></i>
         </button>
       </div>
     </div>
@@ -84,7 +84,8 @@ export default {
       messageCheckInterval: null,
       reconnectAttempts: 0,
       maxReconnectAttempts: 5,
-      apiBaseUrl: 'https://safarimovebackend-production.up.railway.app/api'
+      apiBaseUrl: 'https://safarimovebackend-production.up.railway.app/api',
+      reconnectDelay: 1000, // Initial reconnect delay
     }
   },
   mounted() {
@@ -94,18 +95,24 @@ export default {
     this.setupMessageChecker();
   },
   beforeUnmount() {
-    if (this.socket) {
-      this.socket.close();
-    }
+    this.cleanupWebSocket();
     if (this.messageCheckInterval) {
       clearInterval(this.messageCheckInterval);
     }
   },
   methods: {
+    cleanupWebSocket() {
+      if (this.socket) {
+        this.socket.onclose = null; // Prevent automatic reconnection
+        this.socket.close();
+        this.socket = null;
+      }
+    },
+
     setupMessageChecker() {
       this.messageCheckInterval = setInterval(() => {
         this.checkExpiredMessages();
-      }, 60000); // Check every minute
+      }, 60000);
     },
     
     checkExpiredMessages() {
@@ -164,6 +171,7 @@ export default {
       this.socket.onopen = () => {
         console.log('WebSocket connected');
         this.reconnectAttempts = 0;
+        this.reconnectDelay = 1000; // Reset delay after successful connection
       };
       
       this.socket.onmessage = (event) => {
@@ -178,20 +186,28 @@ export default {
           });
           
           // Check if message already exists
-          if (!this.chatMessages.some(m => m.id === formattedMsg.id)) {
-            this.chatMessages.push(formattedMsg);
+          const messageExists = this.chatMessages.some(m => m.id === formattedMsg.id);
+          if (!messageExists) {
+            this.chatMessages = [...this.chatMessages, formattedMsg];
           }
         }
       };
       
-      this.socket.onclose = () => {
-        console.log('WebSocket disconnected');
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
-          setTimeout(() => {
-            this.reconnectAttempts++;
-            this.connectWebSocket();
-          }, delay);
+      this.socket.onclose = (event) => {
+        console.log('WebSocket disconnected:', event.code, event.reason);
+        
+        if (event.code !== 1000) { // Don't reconnect if closed normally
+          if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts), 30000);
+            console.log(`Attempting to reconnect in ${delay}ms...`);
+            
+            setTimeout(() => {
+              this.reconnectAttempts++;
+              this.connectWebSocket();
+            }, delay);
+          } else {
+            console.log('Max reconnection attempts reached');
+          }
         }
       };
       
@@ -205,12 +221,12 @@ export default {
 
       const messageContent = this.newMessage;
       const isDisappearing = this.isDisappearing;
-      this.newMessage = ''; // Clear input immediately
+      this.newMessage = '';
 
       try {
-        // Optimistically add to UI
+        // Optimistic UI update
         const tempId = Date.now();
-        this.chatMessages.push({
+        const optimisticMsg = {
           id: tempId,
           name: this.currentUser,
           username: 'You',
@@ -220,7 +236,8 @@ export default {
           isCurrentUser: true,
           is_disappearing: isDisappearing,
           sent_at: new Date().toISOString()
-        });
+        };
+        this.chatMessages = [...this.chatMessages, optimisticMsg];
 
         // Save to database via fetch
         const response = await fetch(`${this.apiBaseUrl}/messages/`, {
@@ -240,29 +257,18 @@ export default {
         const persistedMessage = await response.json();
         
         // Replace temporary message with persisted message
-        const tempMsgIndex = this.chatMessages.findIndex(m => m.id === tempId);
-        if (tempMsgIndex >= 0) {
-          this.chatMessages.splice(tempMsgIndex, 1, this.formatMessage(persistedMessage));
-        }
+        this.chatMessages = this.chatMessages.map(msg => 
+          msg.id === tempId ? this.formatMessage(persistedMessage) : msg
+        );
 
-        // Also send via WebSocket if connected
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-          this.socket.send(JSON.stringify({
-            sender: this.currentUser,
-            message: messageContent,
-            id: persistedMessage.id,
-            sent_at: persistedMessage.sent_at,
-            is_disappearing: isDisappearing
-          }));
-        }
+        // WebSocket should broadcast the message to other clients
+        // No need to manually send via WebSocket if backend handles it
 
       } catch (err) {
         console.error('Failed to send message:', err);
         // Remove optimistic message if failed
-        this.chatMessages = this.chatMessages.filter(m => 
-          !(m.message === messageContent && m.name === this.currentUser && !m.id)
-        );
-        this.newMessage = messageContent; // Restore message if failed
+        this.chatMessages = this.chatMessages.filter(m => m.id !== tempId);
+        this.newMessage = messageContent;
       }
     },
     
@@ -277,7 +283,6 @@ export default {
   }
 }
 </script>
-
 <style scoped>
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
@@ -285,5 +290,10 @@ export default {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #4b5563;
   border-radius: 3px;
+}
+
+/* Better mobile touch targets */
+button, input[type="checkbox"] {
+  touch-action: manipulation;
 }
 </style>

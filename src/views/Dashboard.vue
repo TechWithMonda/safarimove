@@ -1,38 +1,38 @@
 <template>
   <div class="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-4 md:p-6">
     <!-- Header Section -->
-    <div class="mb-8">
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div class="mb-6 sm:mb-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 sm:gap-4">
         <div class="flex-1 min-w-0">
-          <h1 class="text-3xl md:text-4xl font-bold text-white mb-2 truncate">Traffic Dashboard</h1>
-          <div class="flex items-center text-gray-400">
+          <h1 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-1 sm:mb-2 truncate">Traffic Dashboard</h1>
+          <div class="flex items-center text-gray-400 text-sm sm:text-base">
             <div class="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></div>
             <span class="truncate">Real-time monitoring system</span>
           </div>
         </div>
         
-        <div class="flex items-center space-x-3">
-          <div class="bg-slate-700/50 backdrop-blur-sm border border-slate-600 rounded-xl px-4 py-2 whitespace-nowrap">
-            <span class="text-sm text-gray-300">Last updated: 2 min ago</span>
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <div class="bg-slate-700/50 backdrop-blur-sm border border-slate-600 rounded-lg sm:rounded-xl px-3 py-1 sm:px-4 sm:py-2 whitespace-nowrap">
+            <span class="text-xs sm:text-sm text-gray-300">Last updated: 2 min ago</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Stats Overview -->
-    <div class="mb-8">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+    <div class="mb-6 sm:mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
         <div
           v-for="(stat, index) in stats"
           :key="index"
-          class="group relative overflow-hidden bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-2xl p-6 hover:bg-slate-800 transition-all duration-300 hover:scale-[1.02] hover:border-slate-600"
+          class="group relative overflow-hidden bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 hover:bg-slate-800 transition-all duration-300 hover:scale-[1.02] hover:border-slate-600"
         >
           <div class="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-slate-700/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           
           <div class="relative z-10">
-            <div class="flex items-center justify-between mb-4">
-              <div :class="stat.iconBg" class="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg">
-                <i :class="stat.icon" class="text-white text-xl"></i>
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
+              <div :class="stat.iconBg" class="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center shadow-lg">
+                <i :class="stat.icon" class="text-white text-lg sm:text-xl"></i>
               </div>
               <div v-if="stat.trend" class="text-right">
                 <span 
@@ -46,8 +46,8 @@
             </div>
             
             <div>
-              <p class="text-sm font-medium text-gray-400 mb-1">{{ stat.label }}</p>
-              <p class="text-2xl md:text-3xl font-bold text-white">{{ stat.value }}</p>
+              <p class="text-xs sm:text-sm font-medium text-gray-400 mb-1">{{ stat.label }}</p>
+              <p class="text-xl sm:text-2xl md:text-3xl font-bold text-white">{{ stat.value }}</p>
             </div>
           </div>
         </div>
@@ -55,53 +55,53 @@
     </div>
 
     <!-- Main Content Area -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
       <!-- Live Chat Feed -->
-      <div class="xl:col-span-2">
-        <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden h-full">
-          <div class="px-6 py-4 border-b border-slate-700/50 bg-slate-700/30">
-            <h2 class="text-xl font-semibold text-white flex items-center">
-              <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3">
-                <i class="fas fa-comments text-white text-sm"></i>
+      <div class="lg:col-span-2">
+        <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden h-full">
+          <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-700/50 bg-slate-700/30">
+            <h2 class="text-lg sm:text-xl font-semibold text-white flex items-center">
+              <div class="w-7 h-7 sm:w-8 sm:h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+                <i class="fas fa-comments text-white text-xs sm:text-sm"></i>
               </div>
               Live Traffic Feed
-              <div class="ml-3 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <div class="ml-2 sm:ml-3 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
             </h2>
           </div>
-          <div class="p-6">
+          <div class="p-4 sm:p-6">
             <LiveChatFeed />
           </div>
         </div>
       </div>
 
       <!-- Recent Updates -->
-      <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-700/50 bg-slate-700/30">
-          <h2 class="text-xl font-semibold text-white flex items-center">
-            <div class="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center mr-3">
-              <i class="fas fa-clock text-white text-sm"></i>
+      <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden">
+        <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-700/50 bg-slate-700/30">
+          <h2 class="text-lg sm:text-xl font-semibold text-white flex items-center">
+            <div class="w-7 h-7 sm:w-8 sm:h-8 bg-green-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+              <i class="fas fa-clock text-white text-xs sm:text-sm"></i>
             </div>
             Recent Updates
           </h2>
         </div>
         
-        <div class="p-4 max-h-96 overflow-y-auto custom-scrollbar">
-          <div class="space-y-3">
+        <div class="p-3 sm:p-4 max-h-80 sm:max-h-96 overflow-y-auto custom-scrollbar">
+          <div class="space-y-2 sm:space-y-3">
             <div
               v-for="(update, index) in recentUpdates"
               :key="index"
-              class="group flex items-start space-x-4 p-4 bg-slate-700/40 rounded-xl hover:bg-slate-700/60 transition-all duration-200 cursor-pointer border border-transparent hover:border-slate-600/50"
+              class="group flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 bg-slate-700/40 rounded-lg sm:rounded-xl hover:bg-slate-700/60 transition-all duration-200 cursor-pointer border border-transparent hover:border-slate-600/50"
             >
               <div class="relative flex-shrink-0 mt-1">
-                <div :class="update.statusColor" class="w-3 h-3 rounded-full shadow-lg"></div>
+                <div :class="update.statusColor" class="w-2 h-2 sm:w-3 sm:h-3 rounded-full shadow-lg"></div>
                 <div :class="update.statusColor" class="absolute inset-0 rounded-full animate-ping opacity-30"></div>
               </div>
               <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between mb-2">
-                  <h3 class="font-semibold text-white group-hover:text-blue-300 transition-colors">{{ update.road }}</h3>
-                  <span class="text-gray-400 text-xs bg-slate-600/50 px-2 py-1 rounded-full">{{ update.time }}</span>
+                <div class="flex items-center justify-between mb-1 sm:mb-2">
+                  <h3 class="text-sm sm:text-base font-semibold text-white group-hover:text-blue-300 transition-colors">{{ update.road }}</h3>
+                  <span class="text-gray-400 text-xs bg-slate-600/50 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full">{{ update.time }}</span>
                 </div>
-                <p class="text-gray-300 text-sm leading-relaxed">{{ update.status }}</p>
+                <p class="text-gray-300 text-xs sm:text-sm leading-relaxed">{{ update.status }}</p>
               </div>
             </div>
           </div>
@@ -110,32 +110,32 @@
     </div>
 
     <!-- Quick Actions Section -->
-    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-2xl shadow-xl overflow-hidden w-full">
-      <div class="px-6 py-4 border-b border-slate-700/50 bg-slate-700/30">
-        <h2 class="text-xl font-semibold text-white flex items-center">
-          <div class="w-8 h-8 bg-yellow-600 rounded-lg flex items-center justify-center mr-3">
-            <i class="fas fa-bolt text-white text-sm"></i>
+    <div class="bg-slate-800/70 backdrop-blur-sm border border-slate-700/50 rounded-xl sm:rounded-2xl shadow-xl overflow-hidden w-full">
+      <div class="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-700/50 bg-slate-700/30">
+        <h2 class="text-lg sm:text-xl font-semibold text-white flex items-center">
+          <div class="w-7 h-7 sm:w-8 sm:h-8 bg-yellow-600 rounded-lg flex items-center justify-center mr-2 sm:mr-3">
+            <i class="fas fa-bolt text-white text-xs sm:text-sm"></i>
           </div>
           Quick Actions
         </h2>
       </div>
       
-      <div class="p-6">
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-4">
+      <div class="p-4 sm:p-6">
+        <div class="grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-8 gap-2 sm:gap-3 md:gap-4">
           <button
             v-for="(action, index) in quickActions"
             :key="index"
             @click="handleQuickAction(action)"
-            class="group relative overflow-hidden flex flex-col items-center p-4 bg-slate-700/40 rounded-xl hover:bg-slate-700/60 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 hover:scale-[1.03]"
+            class="group relative overflow-hidden flex flex-col items-center p-2 sm:p-3 md:p-4 bg-slate-700/40 rounded-lg sm:rounded-xl hover:bg-slate-700/60 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 hover:scale-[1.03]"
             :aria-label="action.name"
           >
             <div class="absolute inset-0 bg-gradient-to-t from-slate-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             
             <div class="relative z-10 flex flex-col items-center">
-              <div class="w-10 h-10 rounded-xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform duration-200" :style="{ backgroundColor: action.color + '20' }">
-                <i :class="action.icon" class="text-xl transition-transform duration-200 group-hover:scale-110" :style="{ color: action.color }"></i>
+              <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-1 sm:mb-2 group-hover:scale-110 transition-transform duration-200" :style="{ backgroundColor: action.color + '20' }">
+                <i :class="action.icon" class="text-lg sm:text-xl transition-transform duration-200 group-hover:scale-110" :style="{ color: action.color }"></i>
               </div>
-              <span class="text-xs sm:text-sm text-white font-medium text-center leading-tight group-hover:text-blue-300 transition-colors px-1">{{ action.name }}</span>
+              <span class="text-xs text-white font-medium text-center leading-tight group-hover:text-blue-300 transition-colors px-1">{{ action.name }}</span>
             </div>
           </button>
         </div>
@@ -264,5 +264,18 @@ onMounted(() => {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: #4b5563;
   border-radius: 3px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .custom-scrollbar {
+    max-height: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .quick-action-button {
+    padding: 0.5rem;
+  }
 }
 </style>
