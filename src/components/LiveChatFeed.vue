@@ -72,8 +72,6 @@
 </template>
 
 <script>
-import api from '@/api';
-
 export default {
   name: 'ChatComponent',
   data() {
@@ -85,7 +83,8 @@ export default {
       isDisappearing: false,
       messageCheckInterval: null,
       reconnectAttempts: 0,
-      maxReconnectAttempts: 5
+      maxReconnectAttempts: 5,
+      apiBaseUrl: 'https://safarimovebackend-production.up.railway.app/api'
     }
   },
   mounted() {
@@ -127,8 +126,11 @@ export default {
     
     async fetchMessages() {
       try {
-        const res = await api.get('/messages/');
-        this.chatMessages = res.data
+        const response = await fetch(`${this.apiBaseUrl}/messages/`);
+        if (!response.ok) throw new Error('Failed to fetch messages');
+        const data = await response.json();
+        
+        this.chatMessages = data
           .filter(msg => !msg.is_expired)
           .map(msg => this.formatMessage(msg));
       } catch (err) {
@@ -151,16 +153,53 @@ export default {
       };
     },
     
- connectWebSocket() {
-  const wsScheme = 'wss://';  // always use wss in production
-  const backendHost = 'safarimovebackend-production.up.railway.app';
-  const roomName = 'lobby';
-  const wsUrl = `${wsScheme}${backendHost}/ws/chat/${roomName}/`;
+    connectWebSocket() {
+      const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+      const backendHost = 'safarimovebackend-production.up.railway.app';
+      const roomName = 'lobby';
+      const wsUrl = `${wsScheme}${backendHost}/ws/chat/${roomName}/`;
 
-  this.socket = new WebSocket(wsUrl);
-  // ...
-},
-
+      this.socket = new WebSocket(wsUrl);
+      
+      this.socket.onopen = () => {
+        console.log('WebSocket connected');
+        this.reconnectAttempts = 0;
+      };
+      
+      this.socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.message) {
+          const formattedMsg = this.formatMessage({
+            id: data.id,
+            sender: data.sender,
+            content: data.message,
+            sent_at: data.sent_at,
+            is_disappearing: data.is_disappearing
+          });
+          
+          // Check if message already exists
+          if (!this.chatMessages.some(m => m.id === formattedMsg.id)) {
+            this.chatMessages.push(formattedMsg);
+          }
+        }
+      };
+      
+      this.socket.onclose = () => {
+        console.log('WebSocket disconnected');
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+          setTimeout(() => {
+            this.reconnectAttempts++;
+            this.connectWebSocket();
+          }, delay);
+        }
+      };
+      
+      this.socket.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    },
+    
     async sendMessage() {
       if (!this.newMessage.trim()) return;
 
@@ -183,15 +222,24 @@ export default {
           sent_at: new Date().toISOString()
         });
 
-        // Save to database via API
-        const apiResponse = await api.post('/messages/', {
-          sender: this.currentUser,
-          content: messageContent,
-          is_disappearing: isDisappearing
+        // Save to database via fetch
+        const response = await fetch(`${this.apiBaseUrl}/messages/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            sender: this.currentUser,
+            content: messageContent,
+            is_disappearing: isDisappearing
+          })
         });
 
+        if (!response.ok) throw new Error('Failed to send message');
+        
+        const persistedMessage = await response.json();
+        
         // Replace temporary message with persisted message
-        const persistedMessage = apiResponse.data;
         const tempMsgIndex = this.chatMessages.findIndex(m => m.id === tempId);
         if (tempMsgIndex >= 0) {
           this.chatMessages.splice(tempMsgIndex, 1, this.formatMessage(persistedMessage));
