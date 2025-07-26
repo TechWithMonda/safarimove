@@ -151,58 +151,16 @@ export default {
       };
     },
     
-    connectWebSocket() {
-      const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-      const roomName = 'lobby';  // or dynamically assign room
-      const wsUrl = wsScheme + window.location.host + `/ws/chat/${roomName}/`;
+ connectWebSocket() {
+  const wsScheme = 'wss://';  // always use wss in production
+  const backendHost = 'safarimovebackend-production.up.railway.app';
+  const roomName = 'lobby';
+  const wsUrl = `${wsScheme}${backendHost}/ws/chat/${roomName}/`;
 
-      
-      this.socket = new WebSocket(wsUrl);
+  this.socket = new WebSocket(wsUrl);
+  // ...
+},
 
-      this.socket.onopen = () => {
-        console.log('WebSocket connected');
-        this.reconnectAttempts = 0;
-      };
-
-      this.socket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          const formattedMsg = this.formatMessage(data);
-          
-          const existingIndex = this.chatMessages.findIndex(m => m.id === data.id);
-          if (existingIndex >= 0) {
-            this.chatMessages.splice(existingIndex, 1, formattedMsg);
-          } else {
-            this.chatMessages.push(formattedMsg);
-          }
-
-          this.$nextTick(() => {
-            const container = this.$el.querySelector('.custom-scrollbar');
-            if (container) {
-              container.scrollTop = container.scrollHeight;
-            }
-          });
-        } catch (err) {
-          console.error('Error parsing WebSocket message:', err);
-        }
-      };
-
-      this.socket.onclose = (e) => {
-        console.log('WebSocket disconnected:', e.reason);
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
-          const delay = Math.min(1000 * (this.reconnectAttempts + 1), 5000);
-          setTimeout(() => {
-            this.reconnectAttempts++;
-            this.connectWebSocket();
-          }, delay);
-        }
-      };
-
-      this.socket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-    },
-    
     async sendMessage() {
       if (!this.newMessage.trim()) return;
 
