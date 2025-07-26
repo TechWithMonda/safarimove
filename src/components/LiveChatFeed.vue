@@ -153,7 +153,9 @@ export default {
     
     connectWebSocket() {
       const wsScheme = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-      const wsUrl = wsScheme + window.location.host + '/ws/chat/';
+      const roomName = 'lobby';  // or dynamically assign room
+      const wsUrl = wsScheme + window.location.host + `/ws/chat/${roomName}/`;
+
       
       this.socket = new WebSocket(wsUrl);
 
