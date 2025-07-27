@@ -110,9 +110,9 @@
                 {{ item.name }}
               </router-link>
             </nav>
-            
           </div>
-<div class="flex-shrink-0 p-4 border-t border-slate-700 animate-fade-in-up">
+          
+          <div class="flex-shrink-0 p-4 border-t border-slate-700 animate-fade-in-up">
             <div class="flex items-center">
               <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center hover:scale-105 transition-transform">
                 <span class="text-sm font-medium text-white">
@@ -144,10 +144,13 @@
 
     <!-- Main Content Area -->
     <div class="flex flex-col flex-1 lg:ml-64">
-      <!-- Top Header -->
-      <header class="bg-slate-800 border-b border-slate-700 shadow-sm">
-        <div class="px-4 sm:px-6 lg:px-8">
-          <div class="flex justify-between items-center py-4">
+      <!-- Top Header with Moving Car -->
+      <header class="bg-slate-800 border-b border-slate-700 shadow-sm relative h-16 overflow-hidden">
+        <!-- Moving Car -->
+        <div class="absolute bottom-2 left-0 w-12 h-6 bg-white rounded-md animate-move-car"></div>
+        
+        <div class="px-4 sm:px-6 lg:px-8 h-full">
+          <div class="flex justify-between items-center h-full">
             <!-- Mobile menu button -->
             <button 
               @click="sidebarOpen = true"
@@ -156,38 +159,8 @@
               <i class="fas fa-bars text-xl"></i>
             </button>
 
-            <!-- Animated Search Bar -->
-         <div class="w-full max-w-xs sm:max-w-md lg:max-w-2xl mx-4 sm:mx-auto lg:mx-0 lg:ml-8 flex-1">
-  <div class="relative">
-    <!-- Search Icon -->
-    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-      <i class="fas fa-search text-gray-400 transition-colors duration-300" :class="{'text-blue-400': isSearchFocused}"></i>
-    </div>
-
-    <!-- Input Field -->
-    <input 
-      v-model="searchQuery"
-      @focus="isSearchFocused = true"
-      @blur="isSearchFocused = false"
-      type="text" 
-      placeholder="Search routes, traffic updates, or locations..."
-      class="block w-full pl-10 pr-10 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300 hover:border-slate-500"
-    >
-
-    <!-- Clear Button -->
-    <div 
-      v-if="searchQuery"
-      @click="searchQuery = ''"
-      class="absolute inset-y-0 right-0 flex items-center pr-3 cursor-pointer hover:text-blue-400 transition-colors"
-    >
-      <i class="fas fa-times"></i>
-    </div>
-  </div>
-</div>
-
-
             <!-- Header Actions -->
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-4 ml-auto">
               <button class="relative p-2 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg hover:animate-pulse">
                 <i class="fas fa-bell"></i>
                 <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-400 animate-ping opacity-75"></span>
@@ -201,7 +174,7 @@
       <main class="flex-1 overflow-y-auto p-6">
         <router-view v-slot="{ Component }">
           <transition name="page" mode="out-in">
-            <component :is="Component" :searchQuery="searchQuery" />
+            <component :is="Component" />
           </transition>
         </router-view>
       </main>
@@ -226,8 +199,6 @@ export default {
     const username = ref('User')
     const isLoggingOut = ref(false)
     const sidebarOpen = ref(false)
-    const searchQuery = ref('')
-    const isSearchFocused = ref(false)
     
     const fetchUserData = () => {
       const userData = localStorage.getItem('user')
@@ -261,9 +232,8 @@ export default {
       }
     }
 
-    // Add event listener for user login events
     onMounted(() => {
-      fetchUserData() // Initial load
+      fetchUserData()
       window.addEventListener('user-login', fetchUserData)
     })
 
@@ -272,8 +242,6 @@ export default {
       username,
       isLoggingOut,
       sidebarOpen,
-      searchQuery,
-      isSearchFocused,
       fetchUserData,
       handleLogout
     }
@@ -295,7 +263,20 @@ export default {
 </script>
 
 <style scoped>
-/* Your existing styles remain unchanged */
+/* Moving Car Animation */
+@keyframes move-car {
+  0% { transform: translateX(-100px); }
+  100% { transform: translateX(calc(100vw + 100px)); }
+}
+
+.animate-move-car {
+  animation: move-car 15s linear infinite;
+}
+
+/* ... (keep all your existing styles exactly as they were) ... */
+
+
+
 /* Custom scrollbar */
 .min-h-screen {
   min-height: 100vh;
@@ -355,6 +336,11 @@ export default {
   }
 }
 
+@keyframes moveCar {
+  0% { transform: translateX(-100px); }
+  100% { transform: translateX(calc(100vw + 100px)); }
+}
+
 /* Animation classes */
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
@@ -411,6 +397,7 @@ a:focus {
   opacity: 0;
   transform: translateX(-50px);
 }
+
 /* Replace your existing scrollbar styles with these */
 ::-webkit-scrollbar {
   width: 8px;
@@ -493,14 +480,8 @@ html {
   .p-6 {
     padding: 1rem;
   }
-  
-  /* Mobile search bar animation */
-  .search-bar-mobile {
-    transition: all 0.3s ease;
-  }
-  
-  .search-bar-mobile:focus-within {
-    width: 100%;
-  }
 }
 </style>
+
+<!-- Include in main HTML or project entry point -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
